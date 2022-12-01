@@ -15,7 +15,7 @@
     },
     "autoload": {
         "psr-4": {
-            "DevsFort\\Pigeon\\Chat": "src/"
+            "DevsFort\\Pigeon\\Chat\\": "src/"
         }
     },
     "extra": {
