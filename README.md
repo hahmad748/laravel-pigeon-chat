@@ -40,7 +40,7 @@ Follow the steps below :
 **Quick Note:** If you are installing this package in a new project, make sure to install the default user authentication system provided with [Laravel](https://laravel.com/docs).
 
 ```sh
-$ composer require devsfort/pigeon/chat
+$ composer require devsfort/laravel-pigeon-chat
 ```
 
 #### 2. Publishing Assets
