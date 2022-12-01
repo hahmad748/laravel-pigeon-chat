@@ -1,0 +1,121 @@
+<?php
+
+
+return [
+
+    /*
+    |--------------------------------------------------------------------------
+    | Messenger app name
+    |--------------------------------------------------------------------------
+    |
+    | This value is the name of the app which is used in the views or elsewhere
+    | in this app.
+    |
+    */
+
+    'name' => env('DEVSFORT_NAME', 'DevsFort Messenger'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Package path
+    |--------------------------------------------------------------------------
+    |
+    | This value is the path of the package or in other meaning, it is the prefix
+    | of all the registered routes in this package.
+    |
+    | e.g. : app.test/devschat
+    */
+
+    'path' => env('DEVSFORT_PATH', 'devschat'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Package's web routes middleware
+    |--------------------------------------------------------------------------
+    |
+    | This value is the middleware of all routes registered in this package
+    | which is by default : auth
+    |
+    */
+
+    'middleware' => env('DEVSFORT_MIDDLEWARE', 'auth'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | REDIS credentials
+    |--------------------------------------------------------------------------
+    |
+    | This array includes all the credentials that required to use pusher API
+    | with Chatty package, which is used to broadcast events over websockets to
+    | create a real-time features.
+    |
+    */
+    'redis' => [
+        'client' => env('REDIS_CLIENT', 'predis'),
+        'cluster' => false,
+        'default' => [
+            'host' => env('REDIS_HOST', '127.0.0.1'),
+            'port' => env('REDIS_PORT', '6379'),
+            'database' => env('REDIS_DB', '0'),
+        ],
+
+    ],
+
+    
+    'socket' => [
+        'host' => env('SOCKET_HOST','127.0.0.1'),
+        'port' =>  env('SOCKET_PORT','8005'),
+    ],
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | User Avatar
+    |--------------------------------------------------------------------------
+    |
+    | This is the user's avatar setting that includes :
+    | [folder]  which is the default folder name to upload and get
+    |           user's avatar from.
+    | [default] which is the default avatar file name for users stored
+    |           in database.
+    |
+    */
+    'user_avatar' => [
+        'folder' => 'users-avatar',
+        'default' => 'avatar.png',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Attachments By Default
+    |--------------------------------------------------------------------------
+    |
+    | This array contains the important default values that used in this package.
+    |
+    | The first value in this array is the default folder name in the storage
+    | which is all the attachments will be stored in.
+    | This is also going to be used in attachments urls in the views.
+    |
+    */
+    'attachments' => [
+        'folder' => 'attachments',
+        // Below is the route name to download attachments.
+        'route' => 'attachments.download',
+    ],
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Route's controllers namespace
+    |--------------------------------------------------------------------------
+    |
+    | You may need to change the namespace of the route's controllers of
+    | this package after publishing the 'controllers' asset, from the
+    | default one to your App's controllers namespace.
+    |
+    | By default: DevsFort\Pigeon\Chat\Http\Controllers
+    |
+    */
+    'namespace' => env('DEVSFORT_ROUTES_NAMESPACE', 'DevsFort\Pigeon\Chat\Http\Controllers'),
+];

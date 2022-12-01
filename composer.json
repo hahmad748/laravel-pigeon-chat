@@ -1,0 +1,36 @@
+{
+    "name": "devsfort/pigeon/chat",
+    "description": "A Laravel package that allows you to add a complete user messaging system into your new/existing Laravel application with only a few easy steps..",
+    "keywords": ["laravel", "nodejs", "socket","chat","express","messaging","broadcasting"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Haseeb Ahmad",
+            "email": "hahmad748@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^7.3||^7.4||^8.0",
+        "laravel/framework": "^7.0||^8.0||^9.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "DevsFort\\Pigeon\\Chat": "src/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.x-dev"
+        },
+        "laravel": {
+            "providers": [
+                "DevsFort\\Pigeon\\Chat\\ChatServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
