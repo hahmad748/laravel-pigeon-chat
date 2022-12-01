@@ -73,8 +73,7 @@ class ChatServiceProvider extends ServiceProvider
             // JavaScript
             __DIR__ . '/assets/js' => public_path('js/devschat'),
             // Images
-            __DIR__ . '/assets/imgs' => storage_path('app/public/' . config('devschat.user_avatar.folder')),
-            __DIR__ . '/../server.js' => public_path('js/devschat'),
+            __DIR__ . '/assets/imgs' => storage_path('app/public/' . config('devschat.user_avatar.folder'))
         ], 'devschat-assets');
     }
     /**
