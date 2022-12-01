@@ -1,4 +1,4 @@
-<p align="center"><img src="/assets/imgs/devsfort.png" alt="devsfort logo"></p>
+<p align="center"><img src="/src/assets/imgs/devsfort.png" alt="devsfort logo"></p>
 # DEVSFORT CHAT WITH SOCKET.IO
 A Laravel package that allows you to add a complete user messaging system into your new/existing Laravel application with only a few easy steps.
 
