@@ -1,5 +1,5 @@
 {
-    "name": "devsfort/pigeon/chat",
+    "name": "devsfort/laravel-pigeon-chat",
     "description": "A Laravel package that allows you to add a complete user messaging system into your new/existing Laravel application with only a few easy steps..",
     "keywords": ["laravel", "nodejs", "socket","chat","express","messaging","broadcasting"],
     "license": "MIT",
