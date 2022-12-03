@@ -39,8 +39,16 @@ Follow the steps below :
 
 **Quick Note:** If you are installing this package in a new project, make sure to install the default user authentication system provided with [Laravel](https://laravel.com/docs).
 
+#### 1.1 Install the laravel/ui package
 ```sh
-$ composer require devsfort/laravel-pigeon-chat
+composer require laravel/ui
+php artisan ui bootstrap --auth
+```
+#### 1.2 Install the pigeon package
+
+
+```sh
+composer require devsfort/laravel-pigeon-chat
 ```
 
 #### 2. Publishing Assets
@@ -56,19 +64,19 @@ The Important assets:
 to publish the assets, do the following command line with changing the tag value .. that means after `--tag=` write `devschat-` + asset name as mentioned above.<br/>
 Example :
 ```sh
-$ php artisan vendor:publish --tag=devschat-config
+php artisan vendor:publish --tag=devschat-config
 ```
 * NOTE: Publishing assets means (e.g. config) that creating a copy of the package's config file into the `config` folder of your Laravel applications and like so with the other asstes (Package's Views, controllers, migrations ...). 
 
 #### 3. Migrations
 Migrate the new `migrations` that added by the previous step 
 ```sh
-$ php artisan migrate
+php artisan migrate
 ```
 #### 4. Storage Symlink
 Create a shortcut or a symlink to the `storage` folder into the `public` folder
 ```sh
-$ php artisan storage:link
+php artisan storage:link
 ```
 
 #### 5. App config
@@ -184,6 +192,8 @@ If published to be modified, it should be like: `App\Http\Controllers\vendor\Dev
 ```
 
 ### Start NODE SERVER
+- For NodeJS server we need to install some dependencies
+- ``` npm install express socket.io ioredis ```
 - After Asset publishing, `server.js` file will be created at `public/js/devschat/server.js`
 - Start Server by typing ``` node server.js ```
 - Server will start on port specified in env file or config
