@@ -66,6 +66,16 @@ class ChatServiceProvider extends ServiceProvider
             __DIR__ . '/views' => resource_path('views/vendor/DevsFort')
         ], 'devschat-views');
 
+        // Node server file
+        $this->publishes([
+            __DIR__ . '/assets/js/server.js' => base_path('server.js'),
+        ], 'devschat-server');
+
+         // Optional: publish NPM script stub
+        $this->publishes([
+            __DIR__ . '/stubs/package.stub.json' => base_path('package-chat.json'),
+        ], 'devschat-npm');
+        
         // Assets
         $this->publishes([
             // CSS
