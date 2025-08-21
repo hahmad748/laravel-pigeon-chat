@@ -68,7 +68,7 @@ class ChatServiceProvider extends ServiceProvider
 
         // Node server file
         $this->publishes([
-            __DIR__ . '/js/server.js' => base_path('server.js'),
+            __DIR__ . '/assets/js/server.js' => base_path('server.js'),
         ], 'devschat-server');
 
          // Optional: publish NPM script stub
