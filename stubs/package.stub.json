@@ -1,0 +1,5 @@
+{
+  "scripts": {
+    "chat-server": "node server.js"
+  }
+}
