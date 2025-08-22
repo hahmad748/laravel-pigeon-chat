@@ -55,6 +55,16 @@ class GroupChat {
         // Member selection handling
         this.initializeMemberSelection();
         
+        // Also add a direct form submission handler to the form itself
+        const form = document.getElementById('createGroupForm');
+        if (form) {
+            form.onsubmit = (e) => {
+                e.preventDefault();
+                console.log('Form onsubmit handler triggered!'); // Debug log
+                this.createGroup();
+            };
+        }
+        
         console.log('Event listeners initialized'); // Debug log
     }
 
@@ -110,24 +120,23 @@ class GroupChat {
     showCreateGroupModal() {
         console.log('showCreateGroupModal called'); // Debug log
         
-        // Show the create group modal using the existing modal system
-        if (typeof app_modal === 'function') {
-            console.log('Using app_modal function'); // Debug log
-            app_modal({
-                show: true,
-                name: 'createGroup'
-            });
-        } else {
-            console.log('app_modal not found, using fallback'); // Debug log
-            // Fallback to direct DOM manipulation
-            const modal = document.querySelector('.app-modal[data-name="createGroup"]');
-            if (modal) {
-                modal.style.display = 'flex';
-                console.log('Modal displayed via fallback'); // Debug log
+        // Wait for app_modal function to be available
+        const waitForAppModal = () => {
+            if (typeof app_modal === 'function') {
+                console.log('Using app_modal function'); // Debug log
+                app_modal({
+                    show: true,
+                    name: 'createGroup'
+                });
             } else {
-                console.error('Create group modal not found!'); // Debug log
+                console.log('app_modal not found, waiting...'); // Debug log
+                // Wait a bit more for the function to be available
+                setTimeout(waitForAppModal, 100);
             }
-        }
+        };
+        
+        // Start waiting
+        waitForAppModal();
     }
 
     hideModal(modalName) {
@@ -147,13 +156,21 @@ class GroupChat {
     }
 
     async createGroup() {
+        console.log('=== createGroup method called ==='); // Debug log
+        
         const form = document.getElementById('createGroupForm');
+        if (!form) {
+            console.error('Form not found!'); // Debug log
+            return;
+        }
+        
         const submitBtn = form.querySelector('button[type="submit"]');
         
         console.log('Creating group...'); // Debug log
         
         // Validate form
         if (!this.validateForm()) {
+            console.log('Form validation failed'); // Debug log
             return;
         }
 
@@ -324,9 +341,14 @@ class GroupChat {
 document.addEventListener('DOMContentLoaded', () => {
     try {
         console.log('DOM loaded, initializing GroupChat...'); // Debug log
-        window.groupChat = new GroupChat();
-        console.log('GroupChat initialized successfully!'); // Debug log
-        console.log('GroupChat instance:', window.groupChat); // Debug log
+        
+        // Wait a bit for the app_modal function to be available
+        setTimeout(() => {
+            window.groupChat = new GroupChat();
+            console.log('GroupChat initialized successfully!'); // Debug log
+            console.log('GroupChat instance:', window.groupChat); // Debug log
+        }, 200);
+        
     } catch (error) {
         console.error('Error initializing GroupChat:', error);
         alert('Error initializing GroupChat: ' + error.message);
