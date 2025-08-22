@@ -143,13 +143,26 @@ class DevsFortChat extends BaseChatService
      * the receiver [User id] as seen.
      *
      * @param int $user_id
+     * @param string $type Message type ('user' or 'group')
      * @return bool
      */
-    public function makeSeen($user_id){
-        Message::Where('from_id',$user_id)
-            ->where('to_id',Auth::user()->id)
-            ->where('seen',0)
-            ->update(['seen' => 1]);
+    public function makeSeen($user_id, $type = 'user'){
+        if ($type === 'group') {
+            // For group messages, mark all unread messages in the group as seen
+            // Note: This is a simplified approach. For more complex group seen tracking,
+            // you would need a separate table to track which users have seen which messages.
+            Message::where('to_id', $user_id) // group_id
+                ->where('type', 'group')
+                ->where('from_id', '!=', Auth::user()->id) // Don't mark own messages as seen
+                ->where('seen', 0)
+                ->update(['seen' => 1]);
+        } else {
+            // For individual messages
+            Message::Where('from_id',$user_id)
+                ->where('to_id',Auth::user()->id)
+                ->where('seen',0)
+                ->update(['seen' => 1]);
+        }
         return 1;
     }
 

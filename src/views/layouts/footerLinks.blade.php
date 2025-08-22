@@ -687,6 +687,32 @@
                 }
             })
 
+            // Listen for message-seen events from the backend
+            socket.on('message-seen', function (data) {
+                console.log('Message seen event received:', data);
+                if (data.from_id == messenger.split('_')[1] && data.to_id == auth_id) {
+                    if (data.seen == true) {
+                        $('.message-time').find('.fa-check').before('<span class="fas fa-check-double seen"></span> ');
+                        $('.message-time').find('.fa-check').remove();
+                        console.info('[message-seen] triggered!');
+                    } else {
+                        console.error('[message-seen] event not triggered!');
+                    }
+                }
+            })
+
+            // Listen for group message seen events
+            socket.on('group-message-seen', function (data) {
+                console.log('Group message seen event received:', data);
+                if (messenger.split('_')[0] === 'group' && data.group_id == messenger.split('_')[1]) {
+                    if (data.seen == true) {
+                        $('.message-time').find('.fa-check').before('<span class="fas fa-check-double seen"></span> ');
+                        $('.message-time').find('.fa-check').remove();
+                        console.info('[group-message-seen] triggered!');
+                    }
+                }
+            })
+
 
 
             /**
@@ -895,21 +921,32 @@
             function makeSeen(status) {
                 // remove unseen counter for the user from the contacts list
                 $('.messenger-list-item[data-contact=' + messenger.split('_')[1] + ']').find('tr>td>b').remove();
+                
+                // Get message type (user or group)
+                const messageType = messenger.split('_')[0];
+                
                 // seen
                 $.ajax({
                     url: url + '/makeSeen',
                     method: 'POST',
-                    data: { '_token': access_token, 'id': messenger.split('_')[1] },
+                    data: { 
+                        '_token': access_token, 
+                        'id': messenger.split('_')[1],
+                        'type': messageType // Add message type to request
+                    },
                     dataType: 'JSON',
                     success: (data) => {
-                        console.log('[seen] Messages seen - ' + messenger.split('_')[1]);
+                        console.log('[seen] Messages seen - ' + messenger.split('_')[1] + ' (type: ' + messageType + ')');
+                    },
+                    error: (xhr, status, error) => {
+                        console.error('[seen] Error marking messages as seen:', error);
                     }
                 });
 
                 return socket.emit('seen',{
                     from_id:auth_id,
                     to_id:messenger.split('_')[1],
-                    type: messenger.split('_')[0], // Message type (user/group)
+                    type: messageType, // Message type (user/group)
                     seen:status
                 });
                 // return channel.trigger('client-seen', {

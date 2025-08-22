@@ -243,8 +243,10 @@ class MessagesController extends Controller
      */
     public function seen(Request $request)
     {
+        $messageType = $request['type'] ?? 'user';
+        
         // make as seen
-        $seen = DevsFort::makeSeen($request['id']);
+        $seen = DevsFort::makeSeen($request['id'], $messageType);
         
         // Broadcast seen event
         if ($seen) {
@@ -253,13 +255,13 @@ class MessagesController extends Controller
                 'to_id' => Auth::user()->id,
                 'seen' => true
             ];
-            $messageType = $request['type'] ?? 'user';
             event(new MessageSeenEvent($data, $messageType));
         }
         
         // send the response
         return Response::json([
             'status' => $seen,
+            'type' => $messageType,
         ], 200);
     }
 

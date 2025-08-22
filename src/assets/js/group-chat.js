@@ -12,28 +12,42 @@ class GroupChat {
     initializeEventListeners() {
         console.log('Initializing event listeners...'); // Debug log
         
-        // Check if jQuery is available
-        if (typeof $ !== 'undefined') {
-            console.log('jQuery is available'); // Debug log
-            
-            // Try jQuery event binding as well
-            $('#createGroupForm').on('submit', (e) => {
-                e.preventDefault();
-                console.log('jQuery form submit event triggered!'); // Debug log
-                this.createGroup();
-            });
-        } else {
-            console.log('jQuery not available, using vanilla JS'); // Debug log
-        }
-
-        // Create group form submission - use event delegation for better reliability
-        document.addEventListener('submit', (e) => {
-            if (e.target.id === 'createGroupForm') {
-                e.preventDefault();
-                console.log('Vanilla JS form submit event triggered!'); // Debug log
-                this.createGroup();
+        // Wait for DOM to be fully ready
+        const initializeFormHandlers = () => {
+            const form = document.getElementById('createGroupForm');
+            if (!form) {
+                console.log('Form not found, retrying...'); // Debug log
+                setTimeout(initializeFormHandlers, 100);
+                return;
             }
-        });
+            
+            console.log('Form found, setting up handlers...'); // Debug log
+            console.log('Form element:', form); // Debug log
+            console.log('Form HTML:', form.outerHTML); // Debug log
+            
+            // Remove any existing handlers first
+            form.removeEventListener('submit', this.handleFormSubmit);
+            
+            // Add the submit handler
+            form.addEventListener('submit', this.handleFormSubmit.bind(this));
+            
+            // Test if the handler is attached
+            console.log('Form submit handler attached:', form.onsubmit); // Debug log
+            
+            // Also add jQuery handler if available
+            if (typeof $ !== 'undefined') {
+                $('#createGroupForm').off('submit').on('submit', (e) => {
+                    e.preventDefault();
+                    console.log('jQuery form submit event triggered!'); // Debug log
+                    this.createGroup();
+                });
+            }
+            
+            console.log('Form handlers set up successfully'); // Debug log
+        };
+        
+        // Initialize form handlers
+        initializeFormHandlers();
 
         // Create group button click
         document.addEventListener('click', (e) => {
@@ -41,6 +55,15 @@ class GroupChat {
                 e.preventDefault();
                 console.log('Create group button clicked!'); // Debug log
                 this.showCreateGroupModal();
+            }
+        });
+        
+        // Backup submit button click handler
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.modern-btn-create')) {
+                e.preventDefault();
+                console.log('Submit button clicked via backup handler!'); // Debug log
+                this.createGroup();
             }
         });
 
@@ -55,17 +78,16 @@ class GroupChat {
         // Member selection handling
         this.initializeMemberSelection();
         
-        // Also add a direct form submission handler to the form itself
-        const form = document.getElementById('createGroupForm');
-        if (form) {
-            form.onsubmit = (e) => {
-                e.preventDefault();
-                console.log('Form onsubmit handler triggered!'); // Debug log
-                this.createGroup();
-            };
-        }
-        
         console.log('Event listeners initialized'); // Debug log
+    }
+    
+    // Separate method for form submission handling
+    handleFormSubmit(e) {
+        e.preventDefault();
+        console.log('Form submit handler triggered!'); // Debug log
+        console.log('Event target:', e.target); // Debug log
+        console.log('Form element:', document.getElementById('createGroupForm')); // Debug log
+        this.createGroup();
     }
 
     initializeMemberSelection() {
@@ -204,6 +226,13 @@ class GroupChat {
 
         // Add CSRF token to form data
         formData.append('_token', csrfToken);
+        
+        // Fix private group checkbox value
+        const isPrivateCheckbox = document.getElementById('isPrivate');
+        if (isPrivateCheckbox) {
+            formData.set('is_private', isPrivateCheckbox.checked ? '1' : '0');
+            console.log('Private group checkbox:', isPrivateCheckbox.checked); // Debug log
+        }
         
         // Log form data for debugging
         for (let [key, value] of formData.entries()) {
