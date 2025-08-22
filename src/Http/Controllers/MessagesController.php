@@ -250,12 +250,42 @@ class MessagesController extends Controller
         
         // Broadcast seen event
         if ($seen) {
-            $data = [
-                'from_id' => $request['id'],
-                'to_id' => Auth::user()->id,
-                'seen' => true
-            ];
-            event(new MessageSeenEvent($data, $messageType));
+            if ($messageType === 'user') {
+                // For individual messages, we need to find who sent the messages that were marked as seen
+                $messageSender = Message::where('to_id', Auth::user()->id)
+                    ->where('from_id', $request['id'])
+                    ->where('seen', 1)
+                    ->where('type', 'user')
+                    ->first();
+                
+                \Log::info('MessageSeenEvent Debug:', [
+                    'messageSender' => $messageSender,
+                    'request_id' => $request['id'],
+                    'auth_user_id' => Auth::user()->id,
+                    'messageType' => $messageType
+                ]);
+                
+                if ($messageSender) {
+                    $data = [
+                        'from_id' => $messageSender->from_id,  // The person who sent the message
+                        'to_id' => Auth::user()->id,           // The person who marked it as seen
+                        'seen' => true
+                    ];
+                    \Log::info('Broadcasting MessageSeenEvent:', $data);
+                    event(new MessageSeenEvent($data, $messageType));
+                } else {
+                    \Log::warning('No message sender found for seen event');
+                }
+            } else {
+                // For group messages
+                $data = [
+                    'from_id' => Auth::user()->id,  // The person who marked it as seen
+                    'to_id' => $request['id'],      // The group ID
+                    'seen' => true
+                ];
+                \Log::info('Broadcasting Group MessageSeenEvent:', $data);
+                event(new MessageSeenEvent($data, $messageType));
+            }
         }
         
         // send the response
@@ -595,7 +625,7 @@ class MessagesController extends Controller
 
             return Response::json([
                 'success' => true,
-                'group' => $group->load('members.user'),
+                'group' => $group->load('members'),
                 'message' => 'Group created successfully!'
             ], 201);
 
@@ -615,7 +645,7 @@ class MessagesController extends Controller
      */
     public function getGroupInfo(Request $request)
     {
-        $group = Group::with(['members.user', 'creator'])
+        $group = Group::with(['members', 'creator'])
             ->where('id', $request->group_id)
             ->first();
 
@@ -724,7 +754,7 @@ class MessagesController extends Controller
      */
     public function groupChat($id)
     {
-        $group = Group::with(['members.user', 'creator'])->findOrFail($id);
+        $group = Group::with(['members', 'creator'])->findOrFail($id);
         
         // Check if user is member of the group
         if (!$group->isMember(Auth::user()->id)) {

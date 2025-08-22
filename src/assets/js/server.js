@@ -77,6 +77,7 @@ redis.on('message', (channel, message) => {
                 
             case 'message-seen':
                 // Message seen confirmations
+                console.log('🔍 Redis message-seen channel received:', data);
                 handleMessageSeen(data);
                 break;
                 
@@ -130,17 +131,30 @@ function handleTypingIndicator(message) {
 function handleMessageSeen(message) {
     const { from_id, to_id, type, seen } = message.data;
     
+    console.log('🔍 handleMessageSeen called with:', { from_id, to_id, type, seen });
+    
     if (type === 'user') {
-        // Individual chat seen
+        // Individual chat seen - notify the original sender
+        console.log(`🔍 Emitting message-seen to user_${from_id}:`, {
+            from_id: from_id,  // The original sender
+            to_id: to_id,      // The person who marked it as seen
+            seen
+        });
         io.to(`user_${from_id}`).emit('message-seen', {
-            from_id: to_id,
+            from_id: from_id,  // The original sender
+            to_id: to_id,      // The person who marked it as seen
             seen
         });
     } else if (type === 'group') {
-        // Group chat seen
+        // Group chat seen - notify all group members
+        console.log(`🔍 Emitting group-message-seen to all:`, {
+            group_id: to_id,
+            from_id: from_id,  // The person who marked it as seen
+            seen
+        });
         io.emit('group-message-seen', {
             group_id: to_id,
-            from_id,
+            from_id: from_id,  // The person who marked it as seen
             seen
         });
     }

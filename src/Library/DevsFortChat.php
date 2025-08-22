@@ -313,7 +313,7 @@ class DevsFortChat extends BaseChatService
      * @return string
      */
     public function getGroupContactItem($group_id){
-        $group = \DevsFort\Pigeon\Chat\Models\Group::with(['members.user', 'creator'])
+        $group = \DevsFort\Pigeon\Chat\Models\Group::with(['members', 'creator'])
             ->where('id', $group_id)
             ->first();
 

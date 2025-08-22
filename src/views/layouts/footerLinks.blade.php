@@ -676,7 +676,8 @@
                 }
             })
             socket.on('client-seen',function (data) {
-                if (data.from_id == messenger.split('_')[1] && data.to_id == auth_id) {
+                // Show double check marks when someone has seen MY messages
+                if (data.from_id == auth_id && data.to_id == messenger.split('_')[1]) {
                     if (data.seen == true) {
                         $('.message-time').find('.fa-check').before('<span class="fas fa-check-double seen"></span> ');
                         $('.message-time').find('.fa-check').remove();
@@ -689,8 +690,20 @@
 
             // Listen for message-seen events from the backend
             socket.on('message-seen', function (data) {
-                console.log('Message seen event received:', data);
-                if (data.from_id == messenger.split('_')[1] && data.to_id == auth_id) {
+                console.log('🔍 Frontend message-seen event received:', data);
+                console.log('🔍 Current auth_id:', auth_id);
+                console.log('🔍 Current messenger:', messenger);
+                console.log('🔍 Condition check:', {
+                    'data.from_id == auth_id': data.from_id == auth_id,
+                    'data.to_id == messenger.split("_")[1]': data.to_id == messenger.split('_')[1],
+                    'data.from_id': data.from_id,
+                    'auth_id': auth_id,
+                    'data.to_id': data.to_id,
+                    'messenger_id': messenger.split('_')[1]
+                });
+                
+                // Show double check marks when someone has seen MY messages
+                if (data.from_id == auth_id && data.to_id == messenger.split('_')[1]) {
                     if (data.seen == true) {
                         $('.message-time').find('.fa-check').before('<span class="fas fa-check-double seen"></span> ');
                         $('.message-time').find('.fa-check').remove();
@@ -698,13 +711,16 @@
                     } else {
                         console.error('[message-seen] event not triggered!');
                     }
+                } else {
+                    console.log('🔍 Condition not met for showing double checks');
                 }
             })
 
             // Listen for group message seen events
             socket.on('group-message-seen', function (data) {
                 console.log('Group message seen event received:', data);
-                if (messenger.split('_')[0] === 'group' && data.group_id == messenger.split('_')[1]) {
+                // Show double check marks when someone has seen MY messages in the group
+                if (messenger.split('_')[0] === 'group' && data.group_id == messenger.split('_')[1] && data.from_id == auth_id) {
                     if (data.seen == true) {
                         $('.message-time').find('.fa-check').before('<span class="fas fa-check-double seen"></span> ');
                         $('.message-time').find('.fa-check').remove();
@@ -898,6 +914,9 @@
                             $("#message-form").trigger("reset");
                             cancelAttachment();
                             messageInput.focus();
+                            
+                            // trigger seen event when opening a chat
+                            makeSeen(true);
                         },
                         error: () => {
                             console.error('Error, check server response!');
