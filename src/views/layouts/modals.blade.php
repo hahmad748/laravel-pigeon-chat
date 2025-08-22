@@ -81,7 +81,7 @@
   <div class="app-modal" data-name="createGroup">
       <div class="app-modal-container">
           <div class="app-modal-card" data-name="createGroup" data-modal='0'>
-              <form id="createGroupForm">
+              <form id="createGroupForm" onsubmit="console.log('Form onsubmit triggered!'); return false;">
                   @csrf
                   <div class="app-modal-header">
                       <i class="fas fa-users" style="margin-right: 10px; color: #2180f3;"></i>
@@ -160,6 +160,9 @@
                       </a>
                       <button type="submit" class="app-btn a-btn-success modern-btn-create">
                           <i class="fas fa-plus"></i> Create Group
+                      </button>
+                      <button type="button" class="app-btn" style="background: #9b59b6; color: white; margin-left: 10px;" onclick="console.log('Test button clicked!'); alert('JavaScript is working!');">
+                          <i class="fas fa-bug"></i> Test JS
                       </button>
                   </div>
               </form>

@@ -1403,7 +1403,7 @@
 
     /* Modal header enhancement */
     .app-modal[data-name="createGroup"] .app-modal-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: #2c3e50
         color: white;
         padding: 20px;
         border-radius: 8px 8px 0 0;

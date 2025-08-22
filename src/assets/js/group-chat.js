@@ -10,16 +10,38 @@ class GroupChat {
     }
 
     initializeEventListeners() {
-        // Create group form submission
-        document.getElementById('createGroupForm')?.addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.createGroup();
+        console.log('Initializing event listeners...'); // Debug log
+        
+        // Check if jQuery is available
+        if (typeof $ !== 'undefined') {
+            console.log('jQuery is available'); // Debug log
+            
+            // Try jQuery event binding as well
+            $('#createGroupForm').on('submit', (e) => {
+                e.preventDefault();
+                console.log('jQuery form submit event triggered!'); // Debug log
+                this.createGroup();
+            });
+        } else {
+            console.log('jQuery not available, using vanilla JS'); // Debug log
+        }
+
+        // Create group form submission - use event delegation for better reliability
+        document.addEventListener('submit', (e) => {
+            if (e.target.id === 'createGroupForm') {
+                e.preventDefault();
+                console.log('Vanilla JS form submit event triggered!'); // Debug log
+                this.createGroup();
+            }
         });
 
         // Create group button click
-        document.querySelector('.create-group-btn')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            this.showCreateGroupModal();
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.create-group-btn')) {
+                e.preventDefault();
+                console.log('Create group button clicked!'); // Debug log
+                this.showCreateGroupModal();
+            }
         });
 
         // Group list item clicks
@@ -32,6 +54,8 @@ class GroupChat {
 
         // Member selection handling
         this.initializeMemberSelection();
+        
+        console.log('Event listeners initialized'); // Debug log
     }
 
     initializeMemberSelection() {
@@ -84,17 +108,24 @@ class GroupChat {
     }
 
     showCreateGroupModal() {
+        console.log('showCreateGroupModal called'); // Debug log
+        
         // Show the create group modal using the existing modal system
         if (typeof app_modal === 'function') {
+            console.log('Using app_modal function'); // Debug log
             app_modal({
                 show: true,
                 name: 'createGroup'
             });
         } else {
+            console.log('app_modal not found, using fallback'); // Debug log
             // Fallback to direct DOM manipulation
             const modal = document.querySelector('.app-modal[data-name="createGroup"]');
             if (modal) {
                 modal.style.display = 'flex';
+                console.log('Modal displayed via fallback'); // Debug log
+            } else {
+                console.error('Create group modal not found!'); // Debug log
             }
         }
     }
@@ -119,6 +150,8 @@ class GroupChat {
         const form = document.getElementById('createGroupForm');
         const submitBtn = form.querySelector('button[type="submit"]');
         
+        console.log('Creating group...'); // Debug log
+        
         // Validate form
         if (!this.validateForm()) {
             return;
@@ -129,19 +162,43 @@ class GroupChat {
 
         const formData = new FormData(form);
 
-        // Add CSRF token
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-        if (csrfToken) {
-            formData.append('_token', csrfToken);
+        // Get CSRF token from meta tag or input field
+        let csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        if (!csrfToken) {
+            csrfToken = document.querySelector('input[name="_token"]')?.value;
+        }
+        
+        console.log('CSRF Token:', csrfToken); // Debug log
+        
+        if (!csrfToken) {
+            this.showErrorMessage('CSRF token not found. Please refresh the page.');
+            this.setLoadingState(false);
+            return;
+        }
+
+        // Add CSRF token to form data
+        formData.append('_token', csrfToken);
+        
+        // Log form data for debugging
+        for (let [key, value] of formData.entries()) {
+            console.log(`${key}:`, value);
         }
 
         try {
+            console.log('Sending request to /devschat/createGroup...'); // Debug log
+            
             const response = await fetch('/devschat/createGroup', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
             });
 
+            console.log('Response status:', response.status); // Debug log
+            
             const result = await response.json();
+            console.log('Response data:', result); // Debug log
 
             if (result.success) {
                 // Show success message
@@ -164,7 +221,7 @@ class GroupChat {
             }
         } catch (error) {
             console.error('Error creating group:', error);
-            this.showErrorMessage('An error occurred while creating the group');
+            this.showErrorMessage('An error occurred while creating the group: ' + error.message);
         } finally {
             this.setLoadingState(false);
         }
@@ -265,7 +322,15 @@ class GroupChat {
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    window.groupChat = new GroupChat();
+    try {
+        console.log('DOM loaded, initializing GroupChat...'); // Debug log
+        window.groupChat = new GroupChat();
+        console.log('GroupChat initialized successfully!'); // Debug log
+        console.log('GroupChat instance:', window.groupChat); // Debug log
+    } catch (error) {
+        console.error('Error initializing GroupChat:', error);
+        alert('Error initializing GroupChat: ' + error.message);
+    }
 });
 
 // Add CSS animations
