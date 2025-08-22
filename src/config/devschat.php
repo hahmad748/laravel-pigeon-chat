@@ -108,9 +108,8 @@ return [
     | Attachments By Default
     |--------------------------------------------------------------------------
     |
-    | This array contains the important default values that used in this package.
-    |
-    | The first value in this array is the default folder name in the storage
+    | This array includes all the attachments settings that required to use
+    | attachments feature in Chatty package, which is used to store and retrieve
     | which is all the attachments will be stored in.
     | This is also going to be used in attachments urls in the views.
     |
@@ -120,6 +119,12 @@ return [
         // Below is the route name to download attachments.
         'route' => env('DEVSFORT_ATTACHMENTS_ROUTE', 'attachments.download'),
         'max_size' => env('DEVSFORT_ATTACHMENTS_MAX_SIZE', 150000000), // 150MB in bytes
+        'allowed_images' => env('DEVSFORT_ALLOWED_IMAGES', 'png,jpg,jpeg,gif'),
+        'allowed_files' => env('DEVSFORT_ALLOWED_FILES', 'zip,rar,txt,pdf'),
+        // Storage disk to use for attachments
+        'disk' => env('DEVSFORT_ATTACHMENTS_DISK', 'public'),
+        // Base URL for attachments (leave empty to use asset() helper)
+        'base_url' => env('DEVSFORT_ATTACHMENTS_BASE_URL', ''),
     ],
 
     /*

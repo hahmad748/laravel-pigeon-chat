@@ -28,17 +28,30 @@ class GroupChat {
                 this.openGroupChat(groupId);
             }
         });
+
+        // Modal cancel buttons
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('cancel')) {
+                const modal = e.target.closest('.app-modal');
+                if (modal) {
+                    this.hideModal(modal.getAttribute('data-name'));
+                }
+            }
+        });
     }
 
     showCreateGroupModal() {
         // Show the create group modal using the existing modal system
-        if (typeof showModal === 'function') {
-            showModal('createGroup');
-        } else {
-            // Fallback to jQuery if available
-            if (typeof $ !== 'undefined') {
-                $('#createGroupModal').modal('show');
-            }
+        const modal = document.querySelector('.app-modal[data-name="createGroup"]');
+        if (modal) {
+            modal.style.display = 'flex';
+        }
+    }
+
+    hideModal(modalName) {
+        const modal = document.querySelector(`.app-modal[data-name="${modalName}"]`);
+        if (modal) {
+            modal.style.display = 'none';
         }
     }
 
@@ -46,13 +59,16 @@ class GroupChat {
         const form = document.getElementById('createGroupForm');
         const formData = new FormData(form);
 
+        // Add CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        if (csrfToken) {
+            formData.append('_token', csrfToken);
+        }
+
         try {
             const response = await fetch('/devschat/createGroup', {
                 method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                }
+                body: formData
             });
 
             const result = await response.json();
@@ -62,7 +78,10 @@ class GroupChat {
                 this.showAlert('Group created successfully!', 'success');
                 
                 // Close modal
-                this.hideCreateGroupModal();
+                this.hideModal('createGroup');
+                
+                // Reset form
+                form.reset();
                 
                 // Refresh the page to show the new group
                 setTimeout(() => {
@@ -77,150 +96,23 @@ class GroupChat {
         }
     }
 
-    hideCreateGroupModal() {
-        if (typeof hideModal === 'function') {
-            hideModal('createGroup');
-        } else if (typeof $ !== 'undefined') {
-            $('#createGroupModal').modal('hide');
-        }
+    showAlert(message, type = 'info') {
+        // Simple alert system - you can enhance this
+        alert(`${type.toUpperCase()}: ${message}`);
     }
 
     async openGroupChat(groupId) {
         try {
-            // Fetch group info
-            const response = await fetch('/devschat/getGroupInfo', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-                body: JSON.stringify({ group_id: groupId })
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                // Update the chat interface to show group chat
-                this.updateChatInterface(result.group);
-                
-                // Switch to messaging view
-                this.switchToMessagingView();
-                
-                // Load group messages
-                this.loadGroupMessages(groupId);
-            } else {
-                this.showAlert(result.message || 'Failed to load group info', 'error');
-            }
+            // Redirect to group chat page
+            window.location.href = `/devschat/group/${groupId}`;
         } catch (error) {
             console.error('Error opening group chat:', error);
             this.showAlert('An error occurred while opening the group chat', 'error');
         }
     }
-
-    updateChatInterface(group) {
-        // Update header with group info
-        const headerAvatar = document.querySelector('.header-avatar');
-        const userName = document.querySelector('.user-name');
-        
-        if (headerAvatar) {
-            headerAvatar.style.backgroundImage = `url('${group.avatar_url}')`;
-        }
-        
-        if (userName) {
-            userName.textContent = group.name;
-        }
-
-        // Store group info for later use
-        window.currentGroup = group;
-    }
-
-    switchToMessagingView() {
-        // Hide list view and show messaging view
-        const listView = document.querySelector('.messenger-listView');
-        const messagingView = document.querySelector('.messenger-messagingView');
-        
-        if (listView && messagingView) {
-            listView.classList.remove('show');
-            messagingView.classList.add('show');
-        }
-    }
-
-    async loadGroupMessages(groupId) {
-        try {
-            const response = await fetch('/devschat/fetchMessages', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-                body: JSON.stringify({ 
-                    id: groupId,
-                    type: 'group'
-                })
-            });
-
-            const result = await response.json();
-            
-            if (result.messages) {
-                this.displayMessages(result.messages);
-            }
-        } catch (error) {
-            console.error('Error loading group messages:', error);
-        }
-    }
-
-    displayMessages(messages) {
-        const messagesContainer = document.querySelector('.messages');
-        if (!messagesContainer) return;
-
-        messagesContainer.innerHTML = '';
-        
-        messages.forEach(message => {
-            const messageElement = this.createMessageElement(message);
-            messagesContainer.appendChild(messageElement);
-        });
-
-        // Scroll to bottom
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
-
-    createMessageElement(message) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message-card ${message.from_id == window.currentUser?.id ? 'mc-sender' : 'mc-default'}`;
-        
-        const time = new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        
-        messageDiv.innerHTML = `
-            <div class="message-card-content">
-                <div class="message-card-content-text">
-                    ${message.body}
-                </div>
-                <div class="message-card-content-time">
-                    ${time}
-                </div>
-            </div>
-        `;
-        
-        return messageDiv;
-    }
-
-    showAlert(message, type = 'info') {
-        // Use existing alert system if available
-        if (typeof showAlert === 'function') {
-            showAlert(message, type);
-        } else {
-            // Fallback alert
-            alert(message);
-        }
-    }
 }
 
-// Initialize group chat functionality when DOM is loaded
+// Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    window.groupChat = new GroupChat();
+    new GroupChat();
 });
-
-// Export for use in other scripts
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = GroupChat;
-}
