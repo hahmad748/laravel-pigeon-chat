@@ -661,7 +661,7 @@
                 console.log('Group chat message received:', data);
                 
                 // For group messages, to_id is the group_id
-                const groupId = data.data.to_id;
+                const groupId = data.to_id;
                 const currentGroupId = messenger.split('_')[1];
                 
                 console.log('Group chat data:', { groupId, currentGroupId, messenger, data });
@@ -670,7 +670,7 @@
                     // remove message hint
                     $(".message-hint").remove();
                     // append message
-                    messagesContainer.find('.messages').append(data.data.message);
+                    messagesContainer.find('.messages').append(data.message);
                     // scroll to bottom
                     scrollBottom(messagesContainer);
                     // trigger seen event (only if this is the active group chat)

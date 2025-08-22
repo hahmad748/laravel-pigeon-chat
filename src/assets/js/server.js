@@ -92,7 +92,9 @@ redis.on('message', (channel, message) => {
 
 // Handle individual user chat messages
 function handleUserChat(message) {
-    const { from_id, to_id } = message.data.data;
+    const { from_id, to_id } = message.data;
+    
+    console.log('🔍 handleUserChat called with:', { from_id, to_id, message: message.data });
     
     // Send to both users using the event names the frontend expects
     io.to(`user_${from_id}`).emit('user-chat', message.data);
@@ -101,7 +103,7 @@ function handleUserChat(message) {
 
 // Handle group chat messages
 function handleGroupChat(message) {
-    const { to_id } = message.data.data; // to_id is the group_id for group messages
+    const { to_id } = message.data; // to_id is the group_id for group messages
     
     console.log('🔍 handleGroupChat called with:', { to_id, message: message.data });
     
