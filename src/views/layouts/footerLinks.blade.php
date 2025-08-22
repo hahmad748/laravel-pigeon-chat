@@ -1198,3 +1198,6 @@
   // Messenger global variable - 0 by default
   messenger = "{{ @$id }}";
 </script>
+
+<!-- Group Chat JavaScript -->
+<script src="{{ asset('js/devschat/group-chat.js') }}"></script>

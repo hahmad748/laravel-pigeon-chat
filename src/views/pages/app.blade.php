@@ -69,8 +69,41 @@
 
            {{-- ---------------- [ Group Tab ] ---------------- --}}
            <div class="@if($route == 'group') show @endif messenger-tab app-scroll" data-view="groups">
-                {{-- items --}}
-                <p style="text-align: center;color:grey;">Soon will be available</p>
+                {{-- Create Group Button --}}
+                <div class="messenger-title">
+                    <span>Groups</span>
+                    <a href="#" class="create-group-btn" data-modal="createGroup" style="float: right; color: #2180f3; font-size: 14px;">
+                        <i class="fas fa-plus"></i> Create Group
+                    </a>
+                </div>
+
+                {{-- Groups List --}}
+                <div class="groups-list">
+                    @forelse($groups as $group)
+                        <table class="messenger-list-item" data-contact="group_{{ $group->id }}" data-type="group">
+                            <tr data-action="0">
+                                <td style="position: relative">
+                                    <div class="avatar av-m"
+                                         style="background-image: url('{{ $group->avatar_url }}');">
+                                    </div>
+                                </td>
+                                <td>
+                                    <p data-id="group_{{ $group->id }}">
+                                        {{ strlen($group->name) > 12 ? trim(substr($group->name,0,12)).'..' : $group->name }}
+                                        <br>
+                                        <small style="color: #666;">
+                                            {{ $group->members->count() }} members
+                                        </small>
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    @empty
+                        <p style="text-align: center;color:grey;margin-top: 20px;">
+                            No groups yet. Create one to get started!
+                        </p>
+                    @endforelse
+                </div>
              </div>
 
              {{-- ---------------- [ Search Tab ] ---------------- --}}

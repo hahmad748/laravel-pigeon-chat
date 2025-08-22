@@ -87,6 +87,19 @@ Route::post('/updateSettings', 'MessagesController@updateSettings')->name('avata
  */
 Route::post('/setActiveStatus', 'MessagesController@setActiveStatus')->name('activeStatus.set');
 
+/**
+ * Group Chat Routes
+ */
+Route::post('/createGroup', 'MessagesController@createGroup')->name('group.create');
+Route::post('/getGroupInfo', 'MessagesController@getGroupInfo')->name('group.info');
+Route::post('/addGroupMember', 'MessagesController@addGroupMember')->name('group.addMember');
+Route::post('/removeGroupMember', 'MessagesController@removeGroupMember')->name('group.removeMember');
+
+/**
+ * Group chat view route
+ */
+Route::get('/group/{id}', 'MessagesController@groupChat')->name('group.chat');
+
 
 
 

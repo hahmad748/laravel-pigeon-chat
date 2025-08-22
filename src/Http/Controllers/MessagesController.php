@@ -3,11 +3,16 @@
 namespace DevsFort\Pigeon\Chat\Http\Controllers;
 
 use DevsFort\Pigeon\Chat\Events\PrivateMessageEvent;
+use DevsFort\Pigeon\Chat\Events\UserStatusEvent;
+use DevsFort\Pigeon\Chat\Events\TypingIndicatorEvent;
+use DevsFort\Pigeon\Chat\Events\MessageSeenEvent;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Response;
 use DevsFort\Pigeon\Chat\Models\Message;
 use DevsFort\Pigeon\Chat\Models\Favorite;
+use DevsFort\Pigeon\Chat\Models\Group;
+use DevsFort\Pigeon\Chat\Models\GroupMember;
 use DevsFort\Pigeon\Chat\Facade\Chat as DevsFort;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -31,12 +36,19 @@ class MessagesController extends Controller
             ? 'user'
             : \Request::route()->getName();
 
-        $users = User::where('id','<>',\auth()->id())->get();
+        // Use customizable service to get users
+        $chatService = app(config('devschat.customization.services.chat_service', 'DevsFort\Pigeon\Chat\Library\DevsFortChat'));
+        $users = $chatService->getUsersForChat(true);
+        
+        // Get user's groups using customizable service
+        $groups = $chatService->getUserGroups(auth()->id());
+        
         // prepare id
         return view('DevsFort::pages.app', [
             'id' => ($id == null) ? 0 : $route . '_' . $id,
             'route' => $route,
             'users' => $users,
+            'groups' => $groups,
             'type' => 'user',
             'messengerColor' => Auth::user()->messenger_color,
             'dark_mode' => Auth::user()->dark_mode < 1 ? 'light' : 'dark',
@@ -93,6 +105,31 @@ class MessagesController extends Controller
      */
     public function send(Request $request)
     {
+        // Check if user can send message using customizable service
+        $chatService = app(config('devschat.customization.services.chat_service', 'DevsFort\Pigeon\Chat\Library\DevsFortChat'));
+        
+        if (!$chatService->canUserMessage(auth()->id(), $request['id'])) {
+            return Response::json([
+                'status' => '403',
+                'error' => 1,
+                'error_msg' => 'You are not allowed to send messages to this user.',
+            ], 403);
+        }
+        
+        // Validate message using customizable validator
+        $customValidator = config('devschat.customization.message_validator');
+        if ($customValidator && class_exists($customValidator)) {
+            $validator = new $customValidator();
+            $validation = $validator->validate($request->all());
+            if (!$validation['valid']) {
+                return Response::json([
+                    'status' => '422',
+                    'error' => 1,
+                    'error_msg' => implode(', ', $validation['errors']),
+                ], 422);
+            }
+        }
+        
         // default variables
         $error_msg = $attachment = $attachment_title = null;
 
@@ -140,8 +177,9 @@ class MessagesController extends Controller
                 'to_id' => $request['id'],
                 'message' => DevsFort::messageCard($messageData, 'default')
             ];
-            // send to user using events
-            event(new PrivateMessageEvent($data));
+            // send to user using events with proper message type
+            $messageType = $request['type'] === 'group' ? 'group' : 'user';
+            event(new PrivateMessageEvent($data, $messageType));
 
 
         }
@@ -201,6 +239,18 @@ class MessagesController extends Controller
     {
         // make as seen
         $seen = DevsFort::makeSeen($request['id']);
+        
+        // Broadcast seen event
+        if ($seen) {
+            $data = [
+                'from_id' => $request['id'],
+                'to_id' => Auth::user()->id,
+                'seen' => true
+            ];
+            $messageType = $request['type'] ?? 'user';
+            event(new MessageSeenEvent($data, $messageType));
+        }
+        
         // send the response
         return Response::json([
             'status' => $seen,
@@ -451,9 +501,237 @@ class MessagesController extends Controller
         $update = $request['status'] > 0
             ? User::where('id', $request['user_id'])->update(['active_status' => 1])
             : User::where('id', $request['user_id'])->update(['active_status' => 0]);
+        
+        // Broadcast status event
+        if ($update) {
+            $data = [
+                'user_id' => $request['user_id'],
+                'status' => $request['status'] > 0 ? 'online' : 'offline'
+            ];
+            event(new UserStatusEvent($data, $data['status']));
+        }
+        
         // send the response
         return Response::json([
             'status' => $update,
         ], 200);
+    }
+
+    /**
+     * Create a new group
+     *
+     * @param Request $request
+     * @return JSON response
+     */
+    public function createGroup(Request $request)
+    {
+        // Check if user can create groups using customizable service
+        $chatService = app(config('devschat.customization.services.chat_service', 'DevsFort\Pigeon\Chat\Library\DevsFortChat'));
+        
+        if (!$chatService->canUserCreateGroups(auth()->id())) {
+            return Response::json([
+                'status' => '403',
+                'error' => 1,
+                'error_msg' => 'You are not allowed to create groups.',
+            ], 403);
+        }
+        
+        // Validate group using customizable validator
+        $customValidator = config('devschat.customization.group_validator');
+        if ($customValidator && class_exists($customValidator)) {
+            $validator = new $customValidator();
+            $validation = $validator->validate($request->all());
+            if (!$validation['valid']) {
+                return Response::json([
+                    'status' => '422',
+                    'error' => 1,
+                    'error_msg' => implode(', ', $validation['errors']),
+                ], 422);
+            }
+        } else {
+            // Default validation
+            $request->validate([
+                'name' => 'required|string|max:255',
+                'description' => 'nullable|string|max:1000',
+                'members' => 'required|array|min:1',
+                'members.*' => 'exists:users,id'
+            ]);
+        }
+
+        try {
+            // Create group
+            $group = Group::create([
+                'name' => $request->name,
+                'description' => $request->description,
+                'created_by' => Auth::user()->id,
+                'is_private' => $request->is_private ?? false
+            ]);
+
+            // Add creator as admin
+            GroupMember::create([
+                'group_id' => $group->id,
+                'user_id' => Auth::user()->id,
+                'role' => 'admin'
+            ]);
+
+            // Add other members
+            foreach ($request->members as $memberId) {
+                if ($memberId != Auth::user()->id) {
+                    GroupMember::create([
+                        'group_id' => $group->id,
+                        'user_id' => $memberId,
+                        'role' => 'member'
+                    ]);
+                }
+            }
+
+            return Response::json([
+                'success' => true,
+                'group' => $group->load('members.user'),
+                'message' => 'Group created successfully!'
+            ], 201);
+
+        } catch (\Exception $e) {
+            return Response::json([
+                'success' => false,
+                'message' => 'Failed to create group: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get group info
+     *
+     * @param Request $request
+     * @return JSON response
+     */
+    public function getGroupInfo(Request $request)
+    {
+        $group = Group::with(['members.user', 'creator'])
+            ->where('id', $request->group_id)
+            ->first();
+
+        if (!$group) {
+            return Response::json([
+                'success' => false,
+                'message' => 'Group not found'
+            ], 404);
+        }
+
+        // Check if user is member
+        if (!$group->isMember(Auth::user()->id)) {
+            return Response::json([
+                'success' => false,
+                'message' => 'You are not a member of this group'
+            ], 403);
+        }
+
+        return Response::json([
+            'success' => true,
+            'group' => $group
+        ], 200);
+    }
+
+    /**
+     * Add member to group
+     *
+     * @param Request $request
+     * @return JSON response
+     */
+    public function addGroupMember(Request $request)
+    {
+        $request->validate([
+            'group_id' => 'required|exists:groups,id',
+            'user_id' => 'required|exists:users,id'
+        ]);
+
+        $group = Group::find($request->group_id);
+        
+        // Check if user is admin
+        if (!$group->isAdmin(Auth::user()->id)) {
+            return Response::json([
+                'success' => false,
+                'message' => 'Only admins can add members'
+            ], 403);
+        }
+
+        // Check if user is already a member
+        if ($group->isMember($request->user_id)) {
+            return Response::json([
+                'success' => false,
+                'message' => 'User is already a member'
+            ], 400);
+        }
+
+        GroupMember::create([
+            'group_id' => $request->group_id,
+            'user_id' => $request->user_id,
+            'role' => 'member'
+        ]);
+
+        return Response::json([
+            'success' => true,
+            'message' => 'Member added successfully!'
+        ], 200);
+    }
+
+    /**
+     * Remove member from group
+     *
+     * @param Request $request
+     * @return JSON response
+     */
+    public function removeGroupMember(Request $request)
+    {
+        $request->validate([
+            'group_id' => 'required|exists:groups,id',
+            'user_id' => 'required|exists:users,id'
+        ]);
+
+        $group = Group::find($request->group_id);
+        
+        // Check if user is admin or removing themselves
+        if (!$group->isAdmin(Auth::user()->id) && Auth::user()->id != $request->user_id) {
+            return Response::json([
+                'success' => false,
+                'message' => 'Only admins can remove other members'
+            ], 403);
+        }
+
+        GroupMember::where('group_id', $request->group_id)
+            ->where('user_id', $request->user_id)
+            ->delete();
+
+        return Response::json([
+            'success' => true,
+            'message' => 'Member removed successfully!'
+        ], 200);
+    }
+
+    /**
+     * Show group chat interface
+     *
+     * @param int $id
+     * @return view
+     */
+    public function groupChat($id)
+    {
+        $group = Group::with(['members.user', 'creator'])->findOrFail($id);
+        
+        // Check if user is member of the group
+        if (!$group->isMember(Auth::user()->id)) {
+            abort(403, 'You are not a member of this group.');
+        }
+
+        return view('DevsFort::pages.app', [
+            'id' => 'group_' . $id,
+            'route' => 'group',
+            'group' => $group,
+            'users' => $group->members->pluck('user'),
+            'groups' => collect([$group]), // Show only this group
+            'type' => 'group',
+            'messengerColor' => Auth::user()->messenger_color,
+            'dark_mode' => Auth::user()->dark_mode < 1 ? 'light' : 'dark',
+        ]);
     }
 }

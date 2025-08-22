@@ -9,7 +9,7 @@ use Pusher\Pusher;
 use Illuminate\Support\Facades\Auth;
 use Exception;
 
-class DevsFortChat
+class DevsFortChat extends BaseChatService
 {
     /**
      * Allowed extensions to upload attachment
@@ -284,4 +284,98 @@ class DevsFortChat
         }
     }
 
+    /**
+     * Get group contact item
+     *
+     * @param int $group_id
+     * @return string
+     */
+    public function getGroupContactItem($group_id){
+        $group = \DevsFort\Pigeon\Chat\Models\Group::with(['members.user', 'creator'])
+            ->where('id', $group_id)
+            ->first();
+
+        if (!$group) {
+            return '';
+        }
+
+        // Get last message
+        $lastMessage = $group->messages()->orderBy('created_at', 'DESC')->first();
+        
+        // Count unseen messages
+        $unseenCounter = $group->messages()
+            ->where('from_id', '!=', Auth::user()->id)
+            ->where('seen', false)
+            ->count();
+
+        return view('DevsFort::layouts.listItem', [
+            'get' => 'groups',
+            'group' => $group,
+            'lastMessage' => $lastMessage,
+            'unseenCounter' => $unseenCounter,
+            'type' => 'group',
+            'id' => 'group_' . $group_id,
+        ])->render();
+    }
+
+    /**
+     * Check if a group is in the favorite list
+     *
+     * @param int $group_id
+     * @return boolean
+     */
+    public function inGroupFavorite($group_id){
+        return Favorite::where('user_id', Auth::user()->id)
+            ->where('favorite_id', 'group_' . $group_id)->count() > 0
+            ? true : false;
+    }
+
+    /**
+     * Make group in favorite list
+     *
+     * @param int $group_id
+     * @param int $star
+     * @return boolean
+     */
+    public function makeGroupInFavorite($group_id, $action){
+        if ($action > 0) {
+            // Star
+            $star = new Favorite();
+            $star->id = rand(9,99999999);
+            $star->user_id = Auth::user()->id;
+            $star->favorite_id = 'group_' . $group_id;
+            $star->save();
+            return $star ? true : false;
+        }else{
+            // UnStar
+            $star = Favorite::where('user_id',Auth::user()->id)
+                ->where('favorite_id','group_' . $group_id)
+                ->delete();
+            return $star ? true : false;
+        }
+    }
+
+    /**
+     * Get shared photos from group
+     *
+     * @param int $group_id
+     * @return array
+     */
+    public function getGroupSharedPhotos($group_id){
+        $images = array(); // Default
+        // Get messages
+        $msgs = $group_id->messages()->orderBy('created_at','DESC');
+        if($msgs->count() > 0){
+            foreach ($msgs->get() as $msg) {
+                // If message has attachment
+                if($msg->attachment){
+                    $attachment = explode(',',$msg->attachment)[0]; // Attachment
+                    // determine the type of the attachment
+                    in_array(pathinfo($attachment, PATHINFO_EXTENSION), $this->getAllowedImages())
+                        ? array_push($images, $attachment) : '';
+                }
+            }
+        }
+        return $images;
+    }
 }

@@ -3,31 +3,21 @@ namespace DevsFort\Pigeon\Chat\Events;
 
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
-use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class PrivateMessageEvent implements ShouldBroadcast
+class UserStatusEvent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $data;
-    public $messageType; // 'user' or 'group'
-    public $channelName;
+    public $status; // 'online', 'offline', 'away'
 
-    public function __construct($data, $messageType = 'user')
+    public function __construct($data, $status = 'online')
     {
         $this->data = $data;
-        $this->messageType = $messageType;
-        
-        // Determine the appropriate channel based on message type
-        if ($messageType === 'group') {
-            $this->channelName = 'group-chat';
-        } else {
-            $this->channelName = 'user-chat';
-        }
+        $this->status = $status;
     }
 
     /**
@@ -37,7 +27,7 @@ class PrivateMessageEvent implements ShouldBroadcast
      */
     public function broadcastOn()
     {
-        return new Channel($this->channelName);
+        return new Channel('user-status');
     }
 
     /**
@@ -48,9 +38,9 @@ class PrivateMessageEvent implements ShouldBroadcast
     public function broadcastWith()
     {
         return [
-            'event' => 'message.sent',
+            'event' => 'user.status',
             'data' => $this->data,
-            'type' => $this->messageType,
+            'status' => $this->status,
             'timestamp' => now()->toISOString()
         ];
     }
@@ -62,6 +52,6 @@ class PrivateMessageEvent implements ShouldBroadcast
      */
     public function broadcastAs()
     {
-        return 'message.sent';
+        return 'user.status';
     }
 }

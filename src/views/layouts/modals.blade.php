@@ -76,3 +76,57 @@
           </div>
       </div>
   </div>
+
+  {{-- ---------------------- Create Group Modal ---------------------- --}}
+  <div class="app-modal" data-name="createGroup">
+      <div class="app-modal-container">
+          <div class="app-modal-card" data-name="createGroup" data-modal='0'>
+              <form id="createGroupForm">
+                  @csrf
+                  <div class="app-modal-header">Create New Group</div>
+                  <div class="app-modal-body">
+                      <div class="form-group">
+                          <label for="groupName">Group Name *</label>
+                          <input type="text" class="form-control" id="groupName" name="name" required maxlength="255" style="width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px;">
+                      </div>
+                      <div class="form-group">
+                          <label for="groupDescription">Description</label>
+                          <textarea class="form-control" id="groupDescription" name="description" rows="3" maxlength="1000" style="width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+                      </div>
+                      <div class="form-group">
+                          <label for="groupMembers">Select Members *</label>
+                          <select class="form-control" id="groupMembers" name="members[]" multiple required style="width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px;">
+                              @foreach($users as $user)
+                                  <option value="{{ $user->id }}">{{ $user->name }}</option>
+                              @endforeach
+                          </select>
+                          <small style="color: #666; font-size: 12px;">Hold Ctrl/Cmd to select multiple members</small>
+                      </div>
+                      <div class="form-check">
+                          <input type="checkbox" id="isPrivate" name="is_private">
+                          <label for="isPrivate" style="margin-left: 5px;">Private Group</label>
+                      </div>
+                  </div>
+                  <div class="app-modal-footer">
+                      <a href="javascript:void(0)" class="app-btn cancel">Cancel</a>
+                      <button type="submit" class="app-btn a-btn-success">Create Group</button>
+                  </div>
+              </form>
+          </div>
+      </div>
+  </div>
+
+  {{-- ---------------------- Group Info Modal ---------------------- --}}
+  <div class="app-modal" data-name="groupInfo">
+      <div class="app-modal-container">
+          <div class="app-modal-card" data-name="groupInfo" data-modal='0'>
+              <div class="app-modal-header">Group Information</div>
+              <div class="app-modal-body" id="groupInfoContent">
+                  <!-- Group info will be loaded here -->
+              </div>
+              <div class="app-modal-footer">
+                  <a href="javascript:void(0)" class="app-btn cancel">Close</a>
+              </div>
+          </div>
+      </div>
+  </div>
