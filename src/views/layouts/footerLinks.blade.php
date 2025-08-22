@@ -627,8 +627,10 @@
                     messagesContainer.find('.messages').append(data.data.message);
                     // scroll to bottom
                     scrollBottom(messagesContainer);
-                    // trigger seen event
-                    makeSeen(true);
+                    // trigger seen event (only if this is the active chat)
+                    if (messenger && messenger.split('_')[1] == data.data.from_id) {
+                        makeSeen(true);
+                    }
                     // remove unseen counter for the user from the contacts list
                     $('.messenger-list-item[data-contact=' + messenger.split('_')[1] + ']').find('tr>td>b').remove();
                 }
@@ -645,8 +647,10 @@
                     messagesContainer.find('.messages').append(data.data.message);
                     // scroll to bottom
                     scrollBottom(messagesContainer);
-                    // trigger seen event
-                    makeSeen(true);
+                    // trigger seen event (only if this is the active group chat)
+                    if (messenger && messenger.split('_')[0] === 'group' && messenger.split('_')[1] == data.data.group_id) {
+                        makeSeen(true);
+                    }
                 }
             });
 
@@ -658,7 +662,10 @@
                     $(".message-hint").remove();
                     messagesContainer.find('.messages').append(data.message);
                     scrollBottom(messagesContainer);
-                    makeSeen(true);
+                    // trigger seen event (only if this is the active chat)
+                    if (messenger && messenger.split('_')[1] == data.from_id) {
+                        makeSeen(true);
+                    }
                     $('.messenger-list-item[data-contact=' + messenger.split('_')[1] + ']').find('tr>td>b').remove();
                 }
             });
@@ -962,16 +969,12 @@
                     }
                 });
 
-                return socket.emit('seen',{
-                    from_id:auth_id,
-                    to_id:messenger.split('_')[1],
-                    type: messageType, // Message type (user/group)
-                    seen:status
-                });
-                // return channel.trigger('client-seen', {
-                //     from_id: auth_id, // Me
-                //     to_id: messenger.split('_')[1], // Messenger
-                //     seen: status,
+                // Note: Laravel broadcasting handles the seen event, no need for Socket.IO emit
+                // return socket.emit('seen',{
+                //     from_id:auth_id,
+                //     to_id:messenger.split('_')[1],
+                //     type: messageType, // Message type (user/group)
+                //     seen:status
                 // });
             }
 
@@ -1056,8 +1059,7 @@
                             NProgress.done();
                             NProgress.remove();
 
-                            // trigger seen event
-                            makeSeen(true);
+                            // Note: makeSeen is already called in IDinfo success, no need to call it again here
                         },
                         error: () => {
                             // remove loading bar

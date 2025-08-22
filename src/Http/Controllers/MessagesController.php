@@ -252,29 +252,30 @@ class MessagesController extends Controller
         if ($seen) {
             if ($messageType === 'user') {
                 // For individual messages, we need to find who sent the messages that were marked as seen
-                $messageSender = Message::where('to_id', Auth::user()->id)
+                // Look for the most recent message from this user to understand the relationship
+                $recentMessage = Message::where('to_id', Auth::user()->id)
                     ->where('from_id', $request['id'])
-                    ->where('seen', 1)
                     ->where('type', 'user')
+                    ->orderBy('created_at', 'desc')
                     ->first();
                 
                 \Log::info('MessageSeenEvent Debug:', [
-                    'messageSender' => $messageSender,
+                    'recentMessage' => $recentMessage,
                     'request_id' => $request['id'],
                     'auth_user_id' => Auth::user()->id,
                     'messageType' => $messageType
                 ]);
                 
-                if ($messageSender) {
+                if ($recentMessage) {
                     $data = [
-                        'from_id' => $messageSender->from_id,  // The person who sent the message
+                        'from_id' => $recentMessage->from_id,  // The person who sent the message
                         'to_id' => Auth::user()->id,           // The person who marked it as seen
                         'seen' => true
                     ];
                     \Log::info('Broadcasting MessageSeenEvent:', $data);
                     event(new MessageSeenEvent($data, $messageType));
                 } else {
-                    \Log::warning('No message sender found for seen event');
+                    \Log::warning('No recent message found for seen event');
                 }
             } else {
                 // For group messages
