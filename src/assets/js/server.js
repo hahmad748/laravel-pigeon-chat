@@ -129,7 +129,7 @@ function handleTypingIndicator(message) {
 
 // Handle message seen confirmations
 function handleMessageSeen(message) {
-    const { from_id, to_id, type, seen } = message.data;
+    const { from_id, to_id, type, seen } = message;
     
     console.log('🔍 handleMessageSeen called with:', { from_id, to_id, type, seen });
     

@@ -38,20 +38,11 @@ class MessageSeenEvent implements ShouldBroadcast
     public function broadcastWith()
     {
         return [
-            'event' => 'message.seen',
             'data' => $this->data,
             'type' => $this->type,
             'timestamp' => now()->toISOString()
         ];
     }
 
-    /**
-     * Get the broadcast event name.
-     *
-     * @return string
-     */
-    public function broadcastAs()
-    {
-        return 'message.seen';
-    }
+
 }
