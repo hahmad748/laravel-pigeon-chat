@@ -64,19 +64,30 @@ class MessagesController extends Controller
      */
     public function idFetchData(Request $request)
     {
-        // Favorite
-        $favorite = DevsFort::inFavorite($request['id']);
-
-        // User data
-        if ($request['type'] == 'user') {
-            $fetch = User::where('id', $request['id'])->first();
+        $type = $request['type'] ?? 'user';
+        $id = $request['id'];
+        
+        if ($type == 'user') {
+            // User data
+            $fetch = User::where('id', $id)->first();
+            $favorite = DevsFort::inFavorite($id);
+            $user_avatar = asset('/storage/' . config('devschat.user_avatar.folder') . '/' . $fetch->avatar);
+        } elseif ($type == 'group') {
+            // Group data
+            $fetch = Group::with(['members', 'creator'])->find($id);
+            $favorite = DevsFort::inGroupFavorite($id);
+            $user_avatar = $fetch->avatar_url ?? asset('/storage/' . config('devschat.group_avatar.folder', 'group_avatars') . '/default.png');
+        } else {
+            return Response::json([
+                'error' => 'Invalid type specified'
+            ], 400);
         }
 
         // send the response
         return Response::json([
             'favorite' => $favorite,
             'fetch' => $fetch,
-            'user_avatar' => asset('/storage/' . config('devschat.user_avatar.folder') . '/' . $fetch->avatar),
+            'user_avatar' => $user_avatar,
         ]);
     }
 
@@ -212,7 +223,8 @@ class MessagesController extends Controller
         $allMessages = null;
 
         // fetch messages
-        $query = DevsFort::fetchMessagesQuery($request['id'])->orderBy('created_at', 'asc');
+        $messageType = $request['type'] ?? 'user';
+        $query = DevsFort::fetchMessagesQuery($request['id'], $messageType)->orderBy('created_at', 'asc');
         $messages = $query->get();
 
         // if there is a messages
@@ -771,6 +783,7 @@ class MessagesController extends Controller
             'type' => 'group',
             'messengerColor' => Auth::user()->messenger_color,
             'dark_mode' => Auth::user()->dark_mode < 1 ? 'light' : 'dark',
+            'selectedGroup' => $group, // Pass the selected group
         ]);
     }
 }

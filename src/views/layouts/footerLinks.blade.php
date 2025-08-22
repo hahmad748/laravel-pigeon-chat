@@ -25,6 +25,15 @@
         $(function () {
 
             getContacts();
+            
+            // Auto-initialize group chat if we're on a group page
+            if (messenger && messenger.split('_')[0] === 'group') {
+                const groupId = messenger.split('_')[1];
+                console.log('Auto-initializing group chat for group:', groupId);
+                
+                // Set the messenger variable and initialize group chat
+                initializeGroupChat(groupId);
+            }
 
             // get contacts list
             getFavoritesList();
@@ -534,7 +543,18 @@
                     $('.messenger-listView').hide();
                 }
                 messenger = $(this).find('p[data-id]').attr('data-id');
-                IDinfo(messenger.split('_')[1], messenger.split('_')[0]);
+                
+                // Check if this is a group or user
+                const type = messenger.split('_')[0];
+                const id = messenger.split('_')[1];
+                
+                if (type === 'group') {
+                    // For groups, redirect to group chat page
+                    window.location.href = url + '/group/' + id;
+                } else {
+                    // For users, use the existing IDinfo function
+                    IDinfo(id, type);
+                }
             });
 
             // typing indicator on [input] keyDown
@@ -1221,6 +1241,87 @@
                     },
                     error: () => {
                         console.error('Server error, check your response');
+                    }
+                });
+            }
+
+            /**
+             *-------------------------------------------------------------
+             * Initialize group chat
+             *-------------------------------------------------------------
+             */
+            function initializeGroupChat(groupId) {
+                console.log('Initializing group chat for group ID:', groupId);
+                
+                // Set the messenger variable
+                messenger = 'group_' + groupId;
+                
+                // Update the UI to show group info
+                updateGroupChatUI(groupId);
+                
+                // Fetch group messages
+                fetchGroupMessages(groupId);
+                
+                // Enable the message form
+                disableOnLoad(false);
+                
+                // Focus on message input
+                messageInput.focus();
+            }
+            
+            /**
+             *-------------------------------------------------------------
+             * Update group chat UI
+             *-------------------------------------------------------------
+             */
+            function updateGroupChatUI(groupId) {
+                // Find the group in the groups list
+                const groupItem = $('.messenger-list-item[data-contact="group_' + groupId + '"]');
+                if (groupItem.length > 0) {
+                    // Get group name and avatar
+                    const groupName = groupItem.find('p[data-id]').text().split('\n')[0].trim();
+                    const groupAvatar = groupItem.find('.avatar').css('background-image');
+                    
+                    // Update header
+                    $('.user-name').text(groupName);
+                    $('.header-avatar').css('background-image', groupAvatar);
+                    $('.messenger-infoView .avatar').css('background-image', groupAvatar);
+                    $('.messenger-infoView .info-name').text(groupName);
+                    
+                    // Show group info
+                    $('.messenger-infoView').show();
+                    $('.messenger-infoView-btns .delete-conversation').hide(); // Hide delete for groups
+                }
+            }
+            
+            /**
+             *-------------------------------------------------------------
+             * Fetch group messages
+             *-------------------------------------------------------------
+             */
+            function fetchGroupMessages(groupId) {
+                console.log('Fetching messages for group:', groupId);
+                
+                $.ajax({
+                    url: url + '/fetchMessages',
+                    method: 'POST',
+                    data: { 
+                        '_token': access_token, 
+                        'id': groupId, 
+                        'type': 'group' 
+                    },
+                    dataType: 'JSON',
+                    success: (data) => {
+                        console.log('Group messages loaded:', data);
+                        messagesContainer.find('.messages').html(data.messages);
+                        scrollBottom(messagesContainer);
+                        
+                        // Mark messages as seen
+                        makeSeen(true);
+                    },
+                    error: (xhr, status, error) => {
+                        console.error('Failed to fetch group messages:', error);
+                        messagesContainer.find('.messages').html('<p class="message-hint"><span>Failed to load messages</span></p>');
                     }
                 });
             }

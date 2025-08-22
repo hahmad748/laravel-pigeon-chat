@@ -116,9 +116,16 @@ class DevsFortChat extends BaseChatService
      * @param int $user_id
      * @return Collection
      */
-    public function fetchMessagesQuery($user_id){
-        return Message::where('from_id',Auth::user()->id)->where('to_id',$user_id)
-            ->orWhere('from_id',$user_id)->where('to_id',Auth::user()->id);
+    public function fetchMessagesQuery($user_id, $type = 'user'){
+        if ($type === 'group') {
+            // For group messages, get all messages in the group
+            return Message::where('to_id', $user_id)
+                ->where('type', 'group');
+        } else {
+            // For individual user messages
+            return Message::where('from_id',Auth::user()->id)->where('to_id',$user_id)
+                ->orWhere('from_id',$user_id)->where('to_id',Auth::user()->id);
+        }
     }
 
     /**
