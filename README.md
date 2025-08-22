@@ -110,6 +110,8 @@ php artisan vendor:publish --tag=devschat-server
 php artisan migrate
 ```
 
+> **⚠️ Important for Fresh Laravel Installations**: If you're installing this package in a fresh Laravel application (especially with Jetstream), you might encounter foreign key constraint errors. The package now handles this automatically, but if you still get errors, see the [Troubleshooting](#-troubleshooting) section below.
+
 ### 4. **Install Node.js Dependencies**
 
 ```bash
@@ -490,22 +492,34 @@ class ChatTest extends TestCase
 
 ### **Common Issues**
 
-1. **Messages Not Sending**
+1. **Migration Errors (Foreign Key Constraints)**
+   - **Error**: `SQLSTATE[HY000]: General error: 1005 Can't create table 'groups' (errno: 150 "Foreign key constraint is incorrectly formed")`
+   - **Solution**: This happens in fresh Laravel installations. The package now handles this automatically by checking if tables exist before adding foreign keys.
+   - **Alternative**: If you still get errors, run migrations in this order:
+     ```bash
+     php artisan migrate:fresh
+     # Then install the package
+     composer require devsfort/laravel-pigeon-chat
+     php artisan vendor:publish --tag=devschat-migrations
+     php artisan migrate
+     ```
+
+2. **Messages Not Sending**
    - Check Redis connection
    - Verify Socket.IO server is running
    - Check broadcasting configuration
 
-2. **Users Not Loading**
+3. **Users Not Loading**
    - Verify user model configuration
    - Check custom user scope implementation
    - Verify database relationships
 
-3. **Group Creation Fails**
+4. **Group Creation Fails**
    - Check group validation rules
    - Verify custom group validator
    - Check database permissions
 
-4. **Real-time Not Working**
+5. **Real-time Not Working**
    - Verify Socket.IO server is running
    - Check Redis configuration
    - Verify event broadcasting
