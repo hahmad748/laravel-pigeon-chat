@@ -6,6 +6,7 @@
 class GroupChat {
     constructor() {
         this.initializeEventListeners();
+        this.selectedMembers = new Set();
     }
 
     initializeEventListeners() {
@@ -28,6 +29,58 @@ class GroupChat {
                 this.openGroupChat(groupId);
             }
         });
+
+        // Member selection handling
+        this.initializeMemberSelection();
+    }
+
+    initializeMemberSelection() {
+        const memberSelect = document.getElementById('groupMembers');
+        if (memberSelect) {
+            memberSelect.addEventListener('change', (e) => {
+                this.updateSelectedMembers();
+            });
+        }
+    }
+
+    updateSelectedMembers() {
+        const memberSelect = document.getElementById('groupMembers');
+        const selectedMembersDiv = document.getElementById('selectedMembers');
+        
+        if (!memberSelect || !selectedMembersDiv) return;
+
+        this.selectedMembers.clear();
+        selectedMembersDiv.innerHTML = '';
+
+        Array.from(memberSelect.selectedOptions).forEach(option => {
+            this.selectedMembers.add({
+                id: option.value,
+                name: option.textContent
+            });
+        });
+
+        // Display selected members as tags
+        this.selectedMembers.forEach(member => {
+            const tag = document.createElement('span');
+            tag.className = 'member-tag';
+            tag.innerHTML = `
+                ${member.name}
+                <span class="remove-member" onclick="removeGroupMember('${member.id}')">×</span>
+            `;
+            selectedMembersDiv.appendChild(tag);
+        });
+    }
+
+    removeMember(memberId) {
+        const memberSelect = document.getElementById('groupMembers');
+        if (memberSelect) {
+            Array.from(memberSelect.options).forEach(option => {
+                if (option.value === memberId) {
+                    option.selected = false;
+                }
+            });
+            this.updateSelectedMembers();
+        }
     }
 
     showCreateGroupModal() {
@@ -64,6 +117,16 @@ class GroupChat {
 
     async createGroup() {
         const form = document.getElementById('createGroupForm');
+        const submitBtn = form.querySelector('button[type="submit"]');
+        
+        // Validate form
+        if (!this.validateForm()) {
+            return;
+        }
+
+        // Show loading state
+        this.setLoadingState(true);
+
         const formData = new FormData(form);
 
         // Add CSRF token
@@ -82,30 +145,111 @@ class GroupChat {
 
             if (result.success) {
                 // Show success message
-                this.showAlert('Group created successfully!', 'success');
+                this.showSuccessMessage('Group created successfully!');
                 
                 // Close modal
                 this.hideModal('createGroup');
                 
                 // Reset form
                 form.reset();
+                this.selectedMembers.clear();
+                this.updateSelectedMembers();
                 
                 // Refresh the page to show the new group
                 setTimeout(() => {
                     window.location.reload();
-                }, 1000);
+                }, 1500);
             } else {
-                this.showAlert(result.message || 'Failed to create group', 'error');
+                this.showErrorMessage(result.message || 'Failed to create group');
             }
         } catch (error) {
             console.error('Error creating group:', error);
-            this.showAlert('An error occurred while creating the group', 'error');
+            this.showErrorMessage('An error occurred while creating the group');
+        } finally {
+            this.setLoadingState(false);
         }
     }
 
-    showAlert(message, type = 'info') {
-        // Simple alert system - you can enhance this
-        alert(`${type.toUpperCase()}: ${message}`);
+    validateForm() {
+        const name = document.getElementById('groupName').value.trim();
+        const members = Array.from(document.getElementById('groupMembers').selectedOptions);
+
+        if (!name) {
+            this.showErrorMessage('Please enter a group name');
+            return false;
+        }
+
+        if (members.length === 0) {
+            this.showErrorMessage('Please select at least one member');
+            return false;
+        }
+
+        return true;
+    }
+
+    setLoadingState(loading) {
+        const submitBtn = document.querySelector('.modern-btn-create');
+        if (submitBtn) {
+            if (loading) {
+                submitBtn.disabled = true;
+                submitBtn.parentElement.classList.add('loading');
+            } else {
+                submitBtn.disabled = false;
+                submitBtn.parentElement.classList.remove('loading');
+            }
+        }
+    }
+
+    showSuccessMessage(message) {
+        // Create success notification
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #27ae60;
+            color: white;
+            padding: 16px 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+            z-index: 10000;
+            font-weight: 600;
+            animation: slideInRight 0.3s ease-out;
+        `;
+        notification.innerHTML = `<i class="fas fa-check-circle" style="margin-right: 8px;"></i>${message}`;
+        
+        document.body.appendChild(notification);
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
+    showErrorMessage(message) {
+        // Create error notification
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #e74c3c;
+            color: white;
+            padding: 16px 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+            z-index: 10000;
+            font-weight: 600;
+            animation: slideInRight 0.3s ease-out;
+        `;
+        notification.innerHTML = `<i class="fas fa-exclamation-circle" style="margin-right: 8px;"></i>${message}`;
+        
+        document.body.appendChild(notification);
+        
+        // Remove after 5 seconds
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
     }
 
     async openGroupChat(groupId) {
@@ -114,12 +258,28 @@ class GroupChat {
             window.location.href = `/devschat/group/${groupId}`;
         } catch (error) {
             console.error('Error opening group chat:', error);
-            this.showAlert('An error occurred while opening the group chat', 'error');
+            this.showErrorMessage('An error occurred while opening the group chat');
         }
     }
 }
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    new GroupChat();
+    window.groupChat = new GroupChat();
 });
+
+// Add CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+`;
+document.head.appendChild(style);

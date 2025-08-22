@@ -246,6 +246,13 @@
                 }
             });
 
+            // Global function for removing group members
+            window.removeGroupMember = function(memberId) {
+                if (window.groupChat && typeof window.groupChat.removeMember === 'function') {
+                    window.groupChat.removeMember(memberId);
+                }
+            };
+
             // upload avatar on change
             $('body').on('change', ".upload-avatar", (e) => {
                 // store the original avatar
@@ -1246,6 +1253,201 @@
 
 
 </script>
+
+<style>
+    /* Modern Create Group Modal Styles */
+    .modern-input, .modern-textarea, .modern-select {
+        width: 100%;
+        padding: 12px 16px;
+        margin: 8px 0;
+        border: 2px solid #e1e5e9;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        background: #ffffff;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .modern-input:focus, .modern-textarea:focus, .modern-select:focus {
+        outline: none;
+        border-color: #2180f3;
+        box-shadow: 0 0 0 3px rgba(33, 128, 243, 0.1);
+        transform: translateY(-1px);
+    }
+
+    .modern-textarea {
+        resize: vertical;
+        min-height: 80px;
+        font-family: inherit;
+    }
+
+    .modern-select {
+        min-height: 120px;
+    }
+
+    .form-label {
+        display: block;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-help {
+        display: block;
+        color: #7f8c8d;
+        font-size: 12px;
+        margin-top: 5px;
+        font-style: italic;
+    }
+
+    .members-selector {
+        position: relative;
+    }
+
+    .selected-members {
+        margin-top: 10px;
+        min-height: 40px;
+        padding: 8px;
+        border: 2px dashed #e1e5e9;
+        border-radius: 6px;
+        background: #f8f9fa;
+    }
+
+    .member-tag {
+        display: inline-block;
+        background: #2180f3;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 12px;
+        margin: 2px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .member-tag .remove-member {
+        margin-left: 5px;
+        cursor: pointer;
+        opacity: 0.8;
+    }
+
+    .member-tag .remove-member:hover {
+        opacity: 1;
+    }
+
+    .modern-checkbox {
+        display: flex;
+        align-items: center;
+        margin: 15px 0;
+    }
+
+    .modern-checkbox-input {
+        width: 18px;
+        height: 18px;
+        margin-right: 10px;
+        accent-color: #2180f3;
+    }
+
+    .modern-checkbox-label {
+        font-weight: 500;
+        color: #2c3e50;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .modern-btn-cancel, .modern-btn-create {
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .modern-btn-cancel {
+        background: #e74c3c;
+        color: white;
+    }
+
+    .modern-btn-cancel:hover {
+        background: #c0392b;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(231, 76, 60, 0.3);
+    }
+
+    .modern-btn-create {
+        background: #27ae60;
+        color: white;
+    }
+
+    .modern-btn-create:hover {
+        background: #229954;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(39, 174, 96, 0.3);
+    }
+
+    .modern-btn-create:disabled {
+        background: #95a5a6;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+
+    /* Modal header enhancement */
+    .app-modal[data-name="createGroup"] .app-modal-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 8px 8px 0 0;
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    /* Loading state */
+    .loading .modern-btn-create {
+        position: relative;
+        color: transparent;
+    }
+
+    .loading .modern-btn-create::after {
+        content: '';
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        top: 50%;
+        left: 50%;
+        margin-left: -8px;
+        margin-top: -8px;
+        border: 2px solid #ffffff;
+        border-radius: 50%;
+        border-top-color: transparent;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* Success animation */
+    .success-animation {
+        animation: successPulse 0.6s ease-in-out;
+    }
+
+    @keyframes successPulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+</style>
+
 <script>
   // Messenger global variable - 0 by default
   messenger = "{{ @$id }}";

@@ -83,33 +83,84 @@
           <div class="app-modal-card" data-name="createGroup" data-modal='0'>
               <form id="createGroupForm">
                   @csrf
-                  <div class="app-modal-header">Create New Group</div>
+                  <div class="app-modal-header">
+                      <i class="fas fa-users" style="margin-right: 10px; color: #2180f3;"></i>
+                      Create New Group
+                  </div>
                   <div class="app-modal-body">
                       <div class="form-group">
-                          <label for="groupName">Group Name *</label>
-                          <input type="text" class="form-control" id="groupName" name="name" required maxlength="255" style="width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px;">
+                          <label for="groupName" class="form-label">
+                              <i class="fas fa-tag" style="margin-right: 5px; color: #666;"></i>
+                              Group Name *
+                          </label>
+                          <input type="text" 
+                                 class="form-control modern-input" 
+                                 id="groupName" 
+                                 name="name" 
+                                 required 
+                                 maxlength="255" 
+                                 placeholder="Enter group name...">
                       </div>
+                      
                       <div class="form-group">
-                          <label for="groupDescription">Description</label>
-                          <textarea class="form-control" id="groupDescription" name="description" rows="3" maxlength="1000" style="width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+                          <label for="groupDescription" class="form-label">
+                              <i class="fas fa-align-left" style="margin-right: 5px; color: #666;"></i>
+                              Description
+                          </label>
+                          <textarea class="form-control modern-textarea" 
+                                    id="groupDescription" 
+                                    name="description" 
+                                    rows="3" 
+                                    maxlength="1000" 
+                                    placeholder="Describe your group..."></textarea>
                       </div>
+                      
                       <div class="form-group">
-                          <label for="groupMembers">Select Members *</label>
-                          <select class="form-control" id="groupMembers" name="members[]" multiple required style="width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px;">
-                              @foreach($users as $user)
-                                  <option value="{{ $user->id }}">{{ $user->name }}</option>
-                              @endforeach
-                          </select>
-                          <small style="color: #666; font-size: 12px;">Hold Ctrl/Cmd to select multiple members</small>
+                          <label for="groupMembers" class="form-label">
+                              <i class="fas fa-user-plus" style="margin-right: 5px; color: #666;"></i>
+                              Select Members *
+                          </label>
+                          <div class="members-selector">
+                              <select class="form-control modern-select" 
+                                      id="groupMembers" 
+                                      name="members[]" 
+                                      multiple 
+                                      required>
+                                  @foreach($users as $user)
+                                      <option value="{{ $user->id }}" class="member-option">
+                                          <i class="fas fa-user"></i> {{ $user->name }}
+                                      </option>
+                                  @endforeach
+                              </select>
+                              <div class="selected-members" id="selectedMembers"></div>
+                          </div>
+                          <small class="form-help">
+                              <i class="fas fa-info-circle"></i>
+                              Hold Ctrl/Cmd to select multiple members
+                          </small>
                       </div>
-                      <div class="form-check">
-                          <input type="checkbox" id="isPrivate" name="is_private">
-                          <label for="isPrivate" style="margin-left: 5px;">Private Group</label>
+                      
+                      <div class="form-group">
+                          <div class="form-check modern-checkbox">
+                              <input type="checkbox" id="isPrivate" name="is_private" class="modern-checkbox-input">
+                              <label for="isPrivate" class="modern-checkbox-label">
+                                  <i class="fas fa-lock" style="margin-right: 5px;"></i>
+                                  Private Group
+                              </label>
+                          </div>
+                          <small class="form-help">
+                              <i class="fas fa-shield-alt"></i>
+                              Private groups are only visible to members
+                          </small>
                       </div>
                   </div>
                   <div class="app-modal-footer">
-                      <a href="javascript:void(0)" class="app-btn cancel">Cancel</a>
-                      <button type="submit" class="app-btn a-btn-success">Create Group</button>
+                      <a href="javascript:void(0)" class="app-btn cancel modern-btn-cancel">
+                          <i class="fas fa-times"></i> Cancel
+                      </a>
+                      <button type="submit" class="app-btn a-btn-success modern-btn-create">
+                          <i class="fas fa-plus"></i> Create Group
+                      </button>
                   </div>
               </form>
           </div>

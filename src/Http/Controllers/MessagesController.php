@@ -148,7 +148,13 @@ class MessagesController extends Controller
                     $attachment_title = $file->getClientOriginalName();
                     // upload attachment and store the new name
                     $attachment = Str::uuid() . "." . $file->getClientOriginalExtension();
-                    $file->storeAs("public/" . config('devschat.attachments.folder'), $attachment);
+                    
+                    // Use the configured storage disk and folder
+                    $disk = config('devschat.attachments.disk', 'public');
+                    $folder = config('devschat.attachments.folder', 'attachments');
+                    
+                    // Store file using the correct disk
+                    $file->storeAs($folder, $attachment, $disk);
                 } else {
                     $error_msg = "File extension not allowed!";
                 }

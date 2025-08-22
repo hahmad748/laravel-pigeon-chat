@@ -272,7 +272,16 @@ class DevsFortChat extends BaseChatService
                 $msg->delete();
                 // delete file attached if exist
                 if ($msg->attachment) {
-                    $path = storage_path('app/public/'.config('devschat.attachments.folder').'/'.explode(',', $msg->attachment)[0]);
+                    // Use the configured storage disk and folder
+                    $disk = config('devschat.attachments.disk', 'public');
+                    $folder = config('devschat.attachments.folder', 'attachments');
+                    
+                    if ($disk === 'public') {
+                        $path = storage_path('app/public/' . $folder . '/' . explode(',', $msg->attachment)[0]);
+                    } else {
+                        $path = storage_path('app/' . $disk . '/' . $folder . '/' . explode(',', $msg->attachment)[0]);
+                    }
+                    
                     if(file_exists($path)){
                         @unlink($path);
                     }
