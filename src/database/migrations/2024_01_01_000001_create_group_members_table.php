@@ -15,15 +15,14 @@ class CreateGroupMembersTable extends Migration
     {
         Schema::create('group_members', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('group_id');
-            $table->unsignedBigInteger('user_id');
+            $table->foreignId('group_id')->constrained('groups')->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+
             $table->enum('role', ['admin', 'member'])->default('member');
             $table->boolean('is_active')->default(true);
             $table->timestamp('joined_at')->useCurrent();
-            $table->foreignId('group_id')->constrained('groups')->cascadeOnDelete();
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
-            
+
             $table->unique(['group_id', 'user_id']);
         });
 
