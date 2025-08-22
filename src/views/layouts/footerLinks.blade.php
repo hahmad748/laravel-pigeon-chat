@@ -226,6 +226,26 @@
                 cancelUpdatingAvatar();
             });
 
+            // Create Group modal [cancel button]
+            $('.app-modal[data-name=createGroup]').find('.app-modal-footer .cancel').on('click', function () {
+                app_modal({
+                    show: false,
+                    name: 'createGroup',
+                });
+            });
+
+            // Global handler for data-modal attributes
+            $('body').on('click', '[data-modal]', function (e) {
+                e.preventDefault();
+                const modalName = $(this).attr('data-modal');
+                if (modalName) {
+                    app_modal({
+                        show: true,
+                        name: modalName
+                    });
+                }
+            });
+
             // upload avatar on change
             $('body').on('change', ".upload-avatar", (e) => {
                 // store the original avatar

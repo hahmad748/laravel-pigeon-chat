@@ -28,30 +28,37 @@ class GroupChat {
                 this.openGroupChat(groupId);
             }
         });
-
-        // Modal cancel buttons
-        document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('cancel')) {
-                const modal = e.target.closest('.app-modal');
-                if (modal) {
-                    this.hideModal(modal.getAttribute('data-name'));
-                }
-            }
-        });
     }
 
     showCreateGroupModal() {
         // Show the create group modal using the existing modal system
-        const modal = document.querySelector('.app-modal[data-name="createGroup"]');
-        if (modal) {
-            modal.style.display = 'flex';
+        if (typeof app_modal === 'function') {
+            app_modal({
+                show: true,
+                name: 'createGroup'
+            });
+        } else {
+            // Fallback to direct DOM manipulation
+            const modal = document.querySelector('.app-modal[data-name="createGroup"]');
+            if (modal) {
+                modal.style.display = 'flex';
+            }
         }
     }
 
     hideModal(modalName) {
-        const modal = document.querySelector(`.app-modal[data-name="${modalName}"]`);
-        if (modal) {
-            modal.style.display = 'none';
+        // Hide modal using the existing modal system
+        if (typeof app_modal === 'function') {
+            app_modal({
+                show: false,
+                name: modalName
+            });
+        } else {
+            // Fallback to direct DOM manipulation
+            const modal = document.querySelector(`.app-modal[data-name="${modalName}"]`);
+            if (modal) {
+                modal.style.display = 'none';
+            }
         }
     }
 
