@@ -120,18 +120,27 @@ class GroupChat {
     showCreateGroupModal() {
         console.log('showCreateGroupModal called'); // Debug log
         
-        // Wait for app_modal function to be available
-        const waitForAppModal = () => {
-            if (typeof app_modal === 'function') {
+        // Wait for app_modal function to be available (with timeout)
+        const waitForAppModal = (attempts = 0) => {
+            if (typeof window.app_modal === 'function') {
                 console.log('Using app_modal function'); // Debug log
-                app_modal({
+                window.app_modal({
                     show: true,
                     name: 'createGroup'
                 });
+            } else if (attempts < 50) { // Max 5 seconds
+                console.log('app_modal not found, waiting... attempt:', attempts + 1); // Debug log
+                setTimeout(() => waitForAppModal(attempts + 1), 100);
             } else {
-                console.log('app_modal not found, waiting...'); // Debug log
-                // Wait a bit more for the function to be available
-                setTimeout(waitForAppModal, 100);
+                console.error('app_modal function not found after 5 seconds, using fallback'); // Debug log
+                // Fallback to direct DOM manipulation
+                const modal = document.querySelector('.app-modal[data-name="createGroup"]');
+                if (modal) {
+                    modal.style.display = 'flex';
+                    console.log('Modal displayed via fallback'); // Debug log
+                } else {
+                    console.error('Create group modal not found!'); // Debug log
+                }
             }
         };
         
@@ -141,8 +150,8 @@ class GroupChat {
 
     hideModal(modalName) {
         // Hide modal using the existing modal system
-        if (typeof app_modal === 'function') {
-            app_modal({
+        if (typeof window.app_modal === 'function') {
+            window.app_modal({
                 show: false,
                 name: modalName
             });
@@ -342,12 +351,17 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
         console.log('DOM loaded, initializing GroupChat...'); // Debug log
         
+        // Check what's available in window
+        console.log('Checking window.app_modal:', typeof window.app_modal); // Debug log
+        console.log('Checking app_modal:', typeof app_modal); // Debug log
+        
         // Wait a bit for the app_modal function to be available
         setTimeout(() => {
+            console.log('After timeout - window.app_modal:', typeof window.app_modal); // Debug log
             window.groupChat = new GroupChat();
             console.log('GroupChat initialized successfully!'); // Debug log
             console.log('GroupChat instance:', window.groupChat); // Debug log
-        }, 200);
+        }, 500); // Increased timeout to 500ms
         
     } catch (error) {
         console.error('Error initializing GroupChat:', error);

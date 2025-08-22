@@ -398,7 +398,7 @@
              * App Modal
              *-------------------------------------------------------------
              */
-            let app_modal = function ({
+            window.app_modal = function ({
                   show = true,
                   name,
                   data = 0,
