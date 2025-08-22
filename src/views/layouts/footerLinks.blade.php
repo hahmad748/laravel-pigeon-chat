@@ -554,6 +554,7 @@
                 return  socket.emit('typing',{
                         from_id: auth_id, // Me
                         to_id: messenger.split('_')[1], // Messenger
+                        type: messenger.split('_')[0], // Message type (user/group)
                         typing: status,
                 });
 
@@ -572,35 +573,65 @@
 
             /**
              *-------------------------------------------------------------
-             * Trigger contact item updates
+             * Trigger contact item updates (not actual message content)
+             * This updates the contact list when messages are sent
              *-------------------------------------------------------------
              */
             function sendContactItemUpdates(status) {
                  socket.emit('sendMessage', {
                     receiver_id: messenger.split('_')[1], // Messenger
                     sender_id: auth_id, // Me
+                    type: messenger.split('_')[0], // Message type (user/group)
                     updating: status,
                 });
 
 
             }
 
-            // Listen to messages, and append if data received
-            socket.on('private-channel:DevsFort\\Pigeon\\Chat\\Events\\PrivateMessageEvent', function (data) {
-
-                console.log(data);
-                // console.info(data.from_id+' - '+data.to_id+'\n'+auth_id+' - '+messenger);
-                if (data.from_id == messenger.split('_')[1] && data.to_id == auth_id) {
+            // Listen to messages from Laravel broadcasting
+            // Listen to user chat messages
+            socket.on('user-chat', function (data) {
+                console.log('User chat message received:', data);
+                
+                if (data.data.from_id == messenger.split('_')[1] && data.data.to_id == auth_id) {
                     // remove message hint
-
                     $(".message-hint").remove();
                     // append message
-                    messagesContainer.find('.messages').append(data.message);
+                    messagesContainer.find('.messages').append(data.data.message);
                     // scroll to bottom
                     scrollBottom(messagesContainer);
                     // trigger seen event
                     makeSeen(true);
                     // remove unseen counter for the user from the contacts list
+                    $('.messenger-list-item[data-contact=' + messenger.split('_')[1] + ']').find('tr>td>b').remove();
+                }
+            });
+
+            // Listen to group chat messages
+            socket.on('group-chat', function (data) {
+                console.log('Group chat message received:', data);
+                
+                if (data.data.group_id == messenger.split('_')[1]) {
+                    // remove message hint
+                    $(".message-hint").remove();
+                    // append message
+                    messagesContainer.find('.messages').append(data.data.message);
+                    // scroll to bottom
+                    scrollBottom(messagesContainer);
+                    // trigger seen event
+                    makeSeen(true);
+                }
+            });
+
+            // Keep the old listener for backward compatibility (can be removed later)
+            socket.on('private-channel:DevsFort\\Pigeon\\Chat\\Events\\PrivateMessageEvent', function (data) {
+                console.log('Legacy private channel message received:', data);
+                // This will still work for existing messages
+                if (data.from_id == messenger.split('_')[1] && data.to_id == auth_id) {
+                    $(".message-hint").remove();
+                    messagesContainer.find('.messages').append(data.message);
+                    scrollBottom(messagesContainer);
+                    makeSeen(true);
                     $('.messenger-list-item[data-contact=' + messenger.split('_')[1] + ']').find('tr>td>b').remove();
                 }
             });
@@ -851,6 +882,7 @@
                 return socket.emit('seen',{
                     from_id:auth_id,
                     to_id:messenger.split('_')[1],
+                    type: messenger.split('_')[0], // Message type (user/group)
                     seen:status
                 });
                 // return channel.trigger('client-seen', {

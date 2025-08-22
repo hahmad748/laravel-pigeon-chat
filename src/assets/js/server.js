@@ -41,39 +41,43 @@ channels.forEach(channel => {
 });
 
 redis.on('message', (channel, message) => {
+    console.log(`Redis message received on channel ${channel}:`, message);
+    
     try {
-        message = JSON.parse(message);
-        console.log(`${channel}:${message.event}`);
+        const data = JSON.parse(message);
+        console.log('Parsed Redis data:', data);
         
         switch (channel) {
             case 'private-channel':
                 // Legacy channel - broadcast to all (for backward compatibility)
-                io.emit(channel + ':' + message.event, message.data.data);
+                io.emit(channel + ':' + data.event, data.data.data);
                 break;
                 
             case 'user-chat':
+                console.log('Processing user-chat message:', data);
                 // Individual chat - only send to specific users
-                handleUserChat(message);
+                handleUserChat(data);
                 break;
                 
             case 'group-chat':
+                console.log('Processing group-chat message:', data);
                 // Group chat - send to all group members
-                handleGroupChat(message);
+                handleGroupChat(data);
                 break;
                 
             case 'user-status':
                 // User status updates
-                io.emit('user-status-update', message.data.data);
+                io.emit('user-status-update', data.data.data);
                 break;
                 
             case 'typing-indicators':
                 // Typing indicators
-                handleTypingIndicator(message);
+                handleTypingIndicator(data);
                 break;
                 
             case 'message-seen':
                 // Message seen confirmations
-                handleMessageSeen(message);
+                handleMessageSeen(data);
                 break;
                 
             default:
@@ -81,41 +85,25 @@ redis.on('message', (channel, message) => {
         }
     } catch (error) {
         console.error('Error processing message:', error);
+        console.error('Raw message:', message);
     }
 });
 
 // Handle individual user chat messages
 function handleUserChat(message) {
-    const { from_id, to_id, data } = message.data;
+    const { from_id, to_id } = message.data.data;
     
-    // Send to sender
-    io.to(`user_${from_id}`).emit('user-chat:message', data);
-    
-    // Send to receiver
-    io.to(`user_${to_id}`).emit('user-chat:message', data);
-    
-    // Update contact list for both users
-    io.to(`user_${from_id}`).emit('contact-list-update', data);
-    io.to(`user_${to_id}`).emit('contact-list-update', data);
+    // Send to both users using the event names the frontend expects
+    io.to(`user_${from_id}`).emit('user-chat', message.data);
+    io.to(`user_${to_id}`).emit('user-chat', message.data);
 }
 
 // Handle group chat messages
 function handleGroupChat(message) {
-    const { group_id, from_id, data } = message.data;
+    const { group_id } = message.data.data;
     
-    // Get all users in the group (this would ideally come from the message data)
-    // For now, we'll emit to all users and let the client filter
-    io.emit('group-chat:message', {
-        group_id,
-        from_id,
-        data
-    });
-    
-    // Update group contact list for all group members
-    io.emit('group-contact-update', {
-        group_id,
-        data
-    });
+    // Send to all users (client will filter by group)
+    io.emit('group-chat', message.data);
 }
 
 // Handle typing indicators
@@ -201,29 +189,33 @@ io.on('connection', (socket) => {
     });
 
     socket.on('typing', (data) => {
-        console.log(`Typing: ${data.from_id} -> ${data.to_id} (${data.type})`);
+        console.log(`Typing event received:`, data);
+        console.log(`Typing: ${data.from_id} -> ${data.to_id} (typing: ${data.typing}, type: ${data.type})`);
         
-        if (data.type === 'user') {
-            // Individual chat typing
-            socket.to(`user_${data.to_id}`).emit('client-typing', data);
-        } else if (data.type === 'group') {
+        if (data.type === 'group') {
             // Group chat typing
             socket.to(`group_${data.to_id}`).emit('group-typing', data);
+        } else {
+            // Individual chat typing
+            socket.to(`user_${data.to_id}`).emit('client-typing', data);
         }
     });
 
     socket.on('sendMessage', (data) => {
-        console.log(`Message sent: ${data.sender_id} -> ${data.receiver_id} (${data.type})`);
+        console.log(`Contact update event received:`, data);
+        console.log(`Contact update: ${data.sender_id} -> ${data.receiver_id} (type: ${data.type}, updating: ${data.updating})`);
         
-        if (data.type === 'user') {
-            // Individual message
+        // This event is for contact item updates, not actual message content
+        // Actual messages are handled by Laravel broadcasting via PrivateMessageEvent
+        
+        if (data.type === 'group') {
+            // Group contact update
+            io.to(`group_${data.receiver_id}`).emit('group-contact-update', data);
+        } else {
+            // Individual contact update
             io.to(`user_${data.receiver_id}`).emit('client-contactItem', data);
             io.to(`user_${data.sender_id}`).emit('client-contactItem', data);
             io.emit('update-conversation', data);
-        } else if (data.type === 'group') {
-            // Group message
-            io.to(`group_${data.receiver_id}`).emit('group-message', data);
-            io.emit('group-conversation-update', data);
         }
     });
 
