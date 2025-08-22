@@ -196,7 +196,19 @@ class MessagesController extends Controller
             ];
             // send to user using events with proper message type
             $messageType = $request['type'] === 'group' ? 'group' : 'user';
-            event(new PrivateMessageEvent($data, $messageType));
+            
+            \Log::info('Broadcasting message event:', [
+                'messageType' => $messageType,
+                'data' => $data,
+                'channel' => $messageType === 'group' ? 'group-chat' : 'user-chat'
+            ]);
+            
+            try {
+                event(new PrivateMessageEvent($data, $messageType));
+                \Log::info('Message event fired successfully');
+            } catch (\Exception $e) {
+                \Log::error('Failed to fire message event: ' . $e->getMessage());
+            }
 
 
         }

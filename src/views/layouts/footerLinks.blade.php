@@ -660,7 +660,13 @@
             socket.on('group-chat', function (data) {
                 console.log('Group chat message received:', data);
                 
-                if (data.data.group_id == messenger.split('_')[1]) {
+                // For group messages, to_id is the group_id
+                const groupId = data.data.to_id;
+                const currentGroupId = messenger.split('_')[1];
+                
+                console.log('Group chat data:', { groupId, currentGroupId, messenger, data });
+                
+                if (groupId == currentGroupId) {
                     // remove message hint
                     $(".message-hint").remove();
                     // append message
@@ -668,7 +674,7 @@
                     // scroll to bottom
                     scrollBottom(messagesContainer);
                     // trigger seen event (only if this is the active group chat)
-                    if (messenger && messenger.split('_')[0] === 'group' && messenger.split('_')[1] == data.data.group_id) {
+                    if (messenger && messenger.split('_')[0] === 'group' && messenger.split('_')[1] == groupId) {
                         makeSeen(true);
                     }
                 }
