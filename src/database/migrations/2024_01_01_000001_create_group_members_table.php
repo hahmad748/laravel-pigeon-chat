@@ -20,23 +20,13 @@ class CreateGroupMembersTable extends Migration
             $table->enum('role', ['admin', 'member'])->default('member');
             $table->boolean('is_active')->default(true);
             $table->timestamp('joined_at')->useCurrent();
+            $table->foreignId('group_id')->constrained('groups')->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
             
             $table->unique(['group_id', 'user_id']);
         });
 
-        // Add foreign key constraints after table creation
-        if (Schema::hasTable('groups')) {
-            Schema::table('group_members', function (Blueprint $table) {
-                $table->foreign('group_id')->references('id')->on('groups')->onDelete('cascade');
-            });
-        }
-
-        if (Schema::hasTable('users')) {
-            Schema::table('group_members', function (Blueprint $table) {
-                $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            });
-        }
     }
 
     /**

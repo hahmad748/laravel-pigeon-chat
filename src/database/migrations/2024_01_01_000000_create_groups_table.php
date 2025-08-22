@@ -18,17 +18,11 @@ class CreateGroupsTable extends Migration
             $table->string('name');
             $table->text('description')->nullable();
             $table->string('avatar')->nullable();
-            $table->unsignedBigInteger('created_by');
             $table->boolean('is_private')->default(false);
+            $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
         });
 
-        // Add foreign key constraint after table creation
-        if (Schema::hasTable('users')) {
-            Schema::table('groups', function (Blueprint $table) {
-                $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
-            });
-        }
     }
 
     /**
